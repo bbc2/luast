@@ -1,0 +1,10 @@
+(menhir
+ (flags
+  (--external-tokens Token))
+ (modules parser))
+
+(library
+ (name lib)
+ (libraries containers sedlex menhirLib)
+ (preprocess
+  (pps sedlex.ppx ppx_deriving.std)))
