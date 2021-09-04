@@ -4,7 +4,8 @@
  (modules parser))
 
 (library
- (name lib)
- (libraries containers sedlex menhirLib)
+ (name luast__parsing)
+ (public_name luast.parsing)
+ (libraries containers sedlex luast.ast menhirLib)
  (preprocess
   (pps sedlex.ppx ppx_deriving.std)))

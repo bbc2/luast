@@ -1,6 +1,5 @@
 %{
-  (* Workaround for https://gitlab.inria.fr/fpottier/menhir/issues/26 *)
-  module Lib = struct end
+  open Luast__ast.Ast
 %}
 
 (* %token If Then Else *)
@@ -13,7 +12,7 @@
 *)
 %token Eof
 
-%start <Ast.Chunk.t> chunk
+%start <Chunk.t> chunk
 
 %%
 
@@ -21,10 +20,10 @@ let chunk :=
   | ~ = block; Eof; <>
 
 let block :=
-  | stats = list(stat); ret = option(retstat); {{Ast.Block.stats; ret}}
+  | stats = list(stat); ret = option(retstat); {{Block.stats; ret}}
 
 let stat :=
-  | vars = varlist; Equal; exps = explist; {Ast.Stat.Assignment {vars; exps}}
+  | vars = varlist; Equal; exps = explist; {Stat.Assignment {vars; exps}}
 
 let varlist :=
   | ~ = separated_nonempty_list(Comma, var); <>
@@ -36,9 +35,9 @@ let retstat :=
   | Return; {[]}
 
 let var :=
-  | ~ = Id; <Ast.Var.Name>
+  | ~ = Id; <Var.Name>
 
 let exp :=
-  | Nil; {Ast.Exp.Nil}
+  | Nil; {Exp.Nil}
 
 %%

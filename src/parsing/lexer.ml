@@ -34,7 +34,7 @@ let rec long_string ~level buf acc =
   | "]" -> (
     match potentially_closing_long_string_bracket ~level buf with
     | `Matched -> acc
-    | `Not_matched lexeme -> long_string ~level buf (acc ^ "]" ^ lexeme) )
+    | `Not_matched lexeme -> long_string ~level buf (acc ^ "]" ^ lexeme))
   | any -> long_string ~level buf (acc ^ Sedlexing.Utf8.lexeme buf)
   | _ -> failwith "Unexpected character"
 
