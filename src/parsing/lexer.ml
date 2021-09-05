@@ -1,3 +1,5 @@
+exception Lexer_error of string
+
 let digit = [%sedlex.regexp? '0' .. '9']
 
 let letter = [%sedlex.regexp? 'a' .. 'z' | 'A' .. 'Z']
@@ -14,7 +16,7 @@ let rec double_quoted_string buf acc =
     double_quoted_string buf (acc ^ escaped)
   | Compl (Chars "\\") ->
     double_quoted_string buf (acc ^ Sedlexing.Utf8.lexeme buf)
-  | _ -> failwith "Unexpected character"
+  | _ -> raise (Lexer_error "Unexpected double quoted string character")
 
 let potentially_closing_long_string_bracket ~level buf =
   let rec aux ~remaining ~acc =
@@ -36,10 +38,11 @@ let rec long_string ~level buf acc =
     | `Matched -> acc
     | `Not_matched lexeme -> long_string ~level buf (acc ^ "]" ^ lexeme))
   | any -> long_string ~level buf (acc ^ Sedlexing.Utf8.lexeme buf)
-  | _ -> failwith "Unexpected character"
+  | _ -> raise (Lexer_error "Unexpected long string character")
 
 let rec parse_token buf : Token.t =
   match%sedlex buf with
+  | white_space -> parse_token buf
   | "if" -> If
   | "then" -> Then
   | "else" -> Else
@@ -53,4 +56,40 @@ let rec parse_token buf : Token.t =
     let level = CCString.length (Sedlexing.Utf8.lexeme buf) - 2 in
     String (long_string ~level buf "")
   | eof -> Eof
-  | _ -> failwith "next: Unexpected character"
+  | _ -> raise (Lexer_error "Unexpected beginning of token")
+
+let lex str =
+  let buf = Sedlexing.Utf8.from_string str in
+  try
+    let token = parse_token buf in
+    let (_, {Lexing.pos_cnum; _}) = Sedlexing.lexing_positions buf in
+    Ok (token, pos_cnum)
+  with
+  | Lexer_error str -> Error str
+
+let print str =
+  lex str |> [%show: (Token.t * int, string) result] |> print_endline
+
+let%expect_test _ =
+  print "";
+  [%expect {| (Ok (Token.Eof, 0)) |}]
+
+let%expect_test _ =
+  print "\n";
+  [%expect {| (Ok (Token.Eof, 1)) |}]
+
+let%expect_test _ =
+  print {|a|};
+  [%expect {| (Ok ((Token.Id "a"), 1)) |}]
+
+let%expect_test _ =
+  print {| a|};
+  [%expect {| (Ok ((Token.Id "a"), 2)) |}]
+
+let%expect_test _ =
+  print {|=|};
+  [%expect {| (Ok (Token.Equal, 1)) |}]
+
+let%expect_test _ =
+  print {|[|};
+  [%expect {| (Error "Unexpected beginning of token") |}]
