@@ -1,5 +1,5 @@
 (executable
  (name cli)
- (libraries containers sedlex luast.parsing)
+ (libraries containers sedlex luast.parsing luast.parser)
  (preprocess
   (pps sedlex.ppx ppx_deriving.std)))
