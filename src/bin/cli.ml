@@ -14,5 +14,5 @@ let () =
 let () =
   {|abc = nil|}
   |> Luast__parser.Parser.parse_chunk
-  |> [%show: Luast__ast.Ast.Chunk.t]
+  |> [%show: (Luast__ast.Ast.Chunk.t, unit) result]
   |> Printf.printf "Parsed: %s\n"

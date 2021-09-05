@@ -2,5 +2,6 @@
  (name luast__parser)
  (public_name luast.parser)
  (libraries luast.ast luast.parsing)
+ (inline_tests)
  (preprocess
-  (pps ppx_deriving.std)))
+  (pps ppx_deriving.std ppx_expect)))
