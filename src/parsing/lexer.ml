@@ -8,12 +8,25 @@ let number = [%sedlex.regexp? Plus digit]
 
 let identifier = [%sedlex.regexp? (letter, Star (letter | digit))]
 
+let control_char = function
+  | 'a' -> "\007"
+  | 'b' -> "\008"
+  | 'f' -> "\012"
+  | 'n' -> "\n"
+  | 'r' -> "\r"
+  | 't' -> "\t"
+  | 'v' -> "\011"
+  | _ -> failwith "Unexpected control character"
+
 let rec double_quoted_string buf acc =
   match%sedlex buf with
   | "\"" -> acc
   | ("\\", Chars "\\\"'") ->
     let escaped = CCString.of_char (Sedlexing.Utf8.lexeme buf).[1] in
     double_quoted_string buf (acc ^ escaped)
+  | ("\\", Chars "abfnrtv") ->
+    let escaped = (Sedlexing.Utf8.lexeme buf).[1] in
+    double_quoted_string buf (acc ^ control_char escaped)
   | Compl (Chars "\\") ->
     double_quoted_string buf (acc ^ Sedlexing.Utf8.lexeme buf)
   | _ -> raise (Lexer_error "Unexpected double quoted string character")
@@ -97,6 +110,30 @@ let%expect_test _ =
 let%expect_test _ =
   print {|"a"|};
   [%expect {| (Ok ((Token.String "a"), 3)) |}]
+
+let%expect_test _ =
+  print {|"a'b"|};
+  [%expect {| (Ok ((Token.String "a'b"), 5)) |}]
+
+let%expect_test _ =
+  print {|"a\'b"|};
+  [%expect {| (Ok ((Token.String "a'b"), 6)) |}]
+
+let%expect_test _ =
+  print {|"a\nb"|};
+  [%expect {| (Ok ((Token.String "a\nb"), 6)) |}]
+
+let%expect_test _ =
+  print {|"a\vb"|};
+  [%expect {| (Ok ((Token.String "a\011b"), 6)) |}]
+
+let%expect_test _ =
+  print {|"a\xb"|};
+  [%expect {| (Error "Unexpected double quoted string character") |}]
+
+let%expect_test _ =
+  print "\"a\nb\"";
+  [%expect {| (Ok ((Token.String "a\nb"), 5)) |}]
 
 let%expect_test _ =
   print {|[[a]]|};
