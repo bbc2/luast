@@ -73,10 +73,27 @@ let rec long_string ~level buf acc =
 let rec parse_token buf : Token.t =
   match%sedlex buf with
   | white_space -> parse_token buf
-  | "if" -> If
-  | "then" -> Then
+  | "and" -> And
+  | "break" -> Break
+  | "do" -> Do
   | "else" -> Else
+  | "elseif" -> Elseif
+  | "end" -> End
+  | "false" -> False
+  | "for" -> For
+  | "function" -> Function
+  | "goto" -> Goto
+  | "if" -> If
+  | "in" -> In
+  | "local" -> Local
   | "nil" -> Nil
+  | "not" -> Not
+  | "or" -> Or
+  | "repeat" -> Repeat
+  | "then" -> Then
+  | "true" -> True
+  | "until" -> Until
+  | "while" -> While
   | identifier -> Id (Sedlexing.Utf8.lexeme buf)
   | "=" -> Equal
   | number -> Number (Sedlexing.Utf8.lexeme buf)
