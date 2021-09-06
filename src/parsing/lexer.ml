@@ -43,6 +43,7 @@ let rec quoted_string ~quote buf acc =
     let escaped = (Sedlexing.Utf8.lexeme buf).[1] in
     quoted_string ~quote buf (acc ^ control_char escaped)
   | ("\\z", Opt white_space) -> quoted_string ~quote buf acc
+  | "\n" -> raise (Lexer_error "Unescaped newline in quoted string")
   | Compl (Chars "\\") ->
     quoted_string ~quote buf (acc ^ Sedlexing.Utf8.lexeme buf)
   | _ -> raise (Lexer_error "Unexpected double quoted string character")
@@ -174,7 +175,7 @@ let%expect_test _ =
 
 let%expect_test _ =
   print "\"a\nb\"";
-  [%expect {| (Ok ((Token.String "a\nb"), 5)) |}]
+  [%expect {| (Error "Unescaped newline in quoted string") |}]
 
 let%expect_test _ =
   print {|[[a]]|};
