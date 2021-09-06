@@ -18,19 +18,33 @@ let control_char = function
   | 'v' -> "\011"
   | _ -> failwith "Unexpected control character"
 
-let rec double_quoted_string buf acc =
+module Quoting = struct
+  type t =
+    | Single
+    | Double
+
+  let delimiter = function
+    | Single -> '\''
+    | Double -> '"'
+end
+
+let rec quoted_string ~quote buf acc =
   match%sedlex buf with
-  | "\"" -> acc
+  | Chars {|'"|} ->
+    let chr = (Sedlexing.Utf8.lexeme buf).[0] in
+    if Quoting.delimiter quote = chr then
+      acc
+    else
+      quoted_string ~quote buf (acc ^ CCString.of_char chr)
   | ("\\", Chars "\\\"'") ->
     let escaped = CCString.of_char (Sedlexing.Utf8.lexeme buf).[1] in
-    double_quoted_string buf (acc ^ escaped)
+    quoted_string ~quote buf (acc ^ escaped)
   | ("\\", Chars "abfnrtv") ->
     let escaped = (Sedlexing.Utf8.lexeme buf).[1] in
-    double_quoted_string buf (acc ^ control_char escaped)
-  | ("\\z", Opt white_space) ->
-    double_quoted_string buf acc
+    quoted_string ~quote buf (acc ^ control_char escaped)
+  | ("\\z", Opt white_space) -> quoted_string ~quote buf acc
   | Compl (Chars "\\") ->
-    double_quoted_string buf (acc ^ Sedlexing.Utf8.lexeme buf)
+    quoted_string ~quote buf (acc ^ Sedlexing.Utf8.lexeme buf)
   | _ -> raise (Lexer_error "Unexpected double quoted string character")
 
 let potentially_closing_long_string_bracket ~level buf =
@@ -66,7 +80,8 @@ let rec parse_token buf : Token.t =
   | "=" -> Equal
   | number -> Number (Sedlexing.Utf8.lexeme buf)
   | Plus (Chars " ") -> parse_token buf
-  | Plus (Chars "\"") -> String (double_quoted_string buf "")
+  | Plus (Chars "'") -> String (quoted_string ~quote:Single buf "")
+  | Plus (Chars "\"") -> String (quoted_string ~quote:Double buf "")
   | ("[", Star "=", "[") ->
     let level = CCString.length (Sedlexing.Utf8.lexeme buf) - 2 in
     String (long_string ~level buf "")
@@ -140,6 +155,22 @@ let%expect_test _ =
 let%expect_test _ =
   print {|"a\xb"|};
   [%expect {| (Error "Unexpected double quoted string character") |}]
+
+let%expect_test _ =
+  print {|"a\"b"|};
+  [%expect {| (Ok ((Token.String "a\"b"), 6)) |}]
+
+let%expect_test _ =
+  print {|"a'b"|};
+  [%expect {| (Ok ((Token.String "a'b"), 5)) |}]
+
+let%expect_test _ =
+  print {|'a'|};
+  [%expect {| (Ok ((Token.String "a"), 3)) |}]
+
+let%expect_test _ =
+  print {|'a"b'|};
+  [%expect {| (Ok ((Token.String "a\"b"), 5)) |}]
 
 let%expect_test _ =
   print "\"a\nb\"";
