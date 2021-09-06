@@ -36,7 +36,7 @@ let rec quoted_string ~quote buf acc =
       acc
     else
       quoted_string ~quote buf (acc ^ CCString.of_char chr)
-  | ("\\", Chars "\\\"'") ->
+  | ("\\", Chars "\\\"'\n") ->
     let escaped = CCString.of_char (Sedlexing.Utf8.lexeme buf).[1] in
     quoted_string ~quote buf (acc ^ escaped)
   | ("\\", Chars "abfnrtv") ->
@@ -176,6 +176,10 @@ let%expect_test _ =
 let%expect_test _ =
   print "\"a\nb\"";
   [%expect {| (Error "Unescaped newline in quoted string") |}]
+
+let%expect_test _ =
+  print "\"a\\\nb\"";
+  [%expect {| (Ok ((Token.String "a\nb"), 6)) |}]
 
 let%expect_test _ =
   print {|[[a]]|};
