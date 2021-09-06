@@ -94,8 +94,40 @@ let rec parse_token buf : Token.t =
   | "true" -> True
   | "until" -> Until
   | "while" -> While
-  | identifier -> Id (Sedlexing.Utf8.lexeme buf)
+  | "+" -> Plus
+  | "-" -> Minus
+  | "*" -> Star
+  | "/" -> Slash
+  | "%" -> Percent
+  | "^" -> Caret
+  | "#" -> Hash
+  | "&" -> Amp
+  | "~" -> Tilde
+  | "|" -> Pipe
+  | "<<" -> Double_lt
+  | ">>" -> Double_gt
+  | "//" -> Double_slash
+  | "==" -> Double_equal
+  | "~=" -> Tilde_equal
+  | "<=" -> Lte
+  | ">=" -> Gte
+  | "<" -> Lt
+  | ">" -> Gt
   | "=" -> Equal
+  | "(" -> Left_paren
+  | ")" -> Right_paren
+  | "{" -> Left_curly
+  | "}" -> Right_curly
+  | "[" -> Left_square
+  | "]" -> Right_square
+  | "::" -> Double_colon
+  | ";" -> Semi_colon
+  | ":" -> Colon
+  | "," -> Comma
+  | "." -> Dot
+  | ".." -> Double_dot
+  | "..." -> Triple_dot
+  | identifier -> Id (Sedlexing.Utf8.lexeme buf)
   | number -> Number (Sedlexing.Utf8.lexeme buf)
   | Plus (Chars " ") -> parse_token buf
   | Plus (Chars "'") -> String (quoted_string ~quote:Single buf "")
@@ -212,4 +244,16 @@ let%expect_test _ =
 
 let%expect_test _ =
   print {|[|};
-  [%expect {| (Error "Unexpected beginning of token") |}]
+  [%expect {| (Ok (Token.Left_square, 1)) |}]
+
+let%expect_test _ =
+  print {|.|};
+  [%expect {| (Ok (Token.Dot, 1)) |}]
+
+let%expect_test _ =
+  print {|..|};
+  [%expect {| (Ok (Token.Double_dot, 2)) |}]
+
+let%expect_test _ =
+  print {|...|};
+  [%expect {| (Ok (Token.Triple_dot, 3)) |}]

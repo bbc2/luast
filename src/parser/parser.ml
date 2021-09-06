@@ -32,5 +32,5 @@ let%expect_test _ =
   [%expect {| (Error "Grammar error") |}]
 
 let%expect_test _ =
-  print {|&|};
+  print {|?|};
   [%expect {| (Error "Lexer error: Unexpected beginning of token") |}]
