@@ -2,8 +2,15 @@ module Var : sig
   type t = Name of string [@@deriving eq, ord, show]
 end
 
+module Numeral : sig
+  type t = Integer of Int64.t [@@deriving eq, ord, show]
+end
+
 module Exp : sig
-  type t = Nil [@@deriving eq, ord, show]
+  type t =
+    | Nil
+    | Numeral of Numeral.t
+  [@@deriving eq, ord, show]
 end
 
 module Stat : sig

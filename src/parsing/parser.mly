@@ -6,6 +6,7 @@
 %token Nil Return
 %token Comma Equal
 %token <string> Id
+%token <Int64.t> Integer
 (*
 %token <string> Number
 %token <string> String
@@ -38,6 +39,7 @@ let var :=
   | ~ = Id; <Var.Name>
 
 let exp :=
-  | Nil; {Exp.Nil}
+  | Nil; {Nil}
+  | integer = Integer; {Numeral (Integer integer)}
 
 %%

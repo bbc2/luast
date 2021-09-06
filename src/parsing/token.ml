@@ -55,7 +55,7 @@ type t =
   | Double_dot (* .. *)
   | Triple_dot (* ... *)
   | Id of string
-  | Number of string
+  | Integer of Int64.t
   | String of string
   | Eof
 [@@deriving show]
@@ -119,6 +119,6 @@ let to_string = function
   | Double_dot -> "Double_dot"
   | Triple_dot -> "Triple_dot"
   | Id id -> Printf.sprintf "Id: %s" id
-  | Number number -> Printf.sprintf "Number: %s" number
+  | Integer integer -> Printf.sprintf "Integer: %Ld" integer
   | String str -> Printf.sprintf "String: %s" str
   | Eof -> "Eof"

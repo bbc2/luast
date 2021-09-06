@@ -4,7 +4,7 @@ let digit = [%sedlex.regexp? '0' .. '9']
 
 let letter = [%sedlex.regexp? 'a' .. 'z' | 'A' .. 'Z']
 
-let number = [%sedlex.regexp? Plus digit]
+let integer = [%sedlex.regexp? Plus digit]
 
 let identifier = [%sedlex.regexp? (letter, Star (letter | digit))]
 
@@ -128,7 +128,11 @@ let rec parse_token buf : Token.t =
   | ".." -> Double_dot
   | "..." -> Triple_dot
   | identifier -> Id (Sedlexing.Utf8.lexeme buf)
-  | number -> Number (Sedlexing.Utf8.lexeme buf)
+  | integer -> (
+    let str = Sedlexing.Utf8.lexeme buf in
+    try Integer (Int64.of_string str) with
+    | Failure _ -> raise (Lexer_error (Printf.sprintf "Not an integer: %s" str))
+    )
   | Plus (Chars " ") -> parse_token buf
   | Plus (Chars "'") -> String (quoted_string ~quote:Single buf "")
   | Plus (Chars "\"") -> String (quoted_string ~quote:Double buf "")
@@ -168,7 +172,11 @@ let%expect_test _ =
 
 let%expect_test _ =
   print {|1|};
-  [%expect {| (Ok ((Token.Number "1"), 1)) |}]
+  [%expect {| (Ok ((Token.Integer 1L), 1)) |}]
+
+let%expect_test _ =
+  print {|10000000000000000000|};
+  [%expect {| (Error "Not an integer: 10000000000000000000") |}]
 
 let%expect_test _ =
   print {|=|};

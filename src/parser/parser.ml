@@ -28,6 +28,16 @@ let%expect_test _ =
             ret = None }) |}]
 
 let%expect_test _ =
+  print {|a = 0|};
+  [%expect
+    {|
+      (Ok { Ast.Block.stats =
+            [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+               exps = [(Ast.Exp.Numeral (Ast.Numeral.Integer 0L))]}
+              ];
+            ret = None }) |}]
+
+let%expect_test _ =
   print {|a|};
   [%expect {| (Error "Grammar error") |}]
 
