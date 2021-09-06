@@ -27,6 +27,8 @@ let rec double_quoted_string buf acc =
   | ("\\", Chars "abfnrtv") ->
     let escaped = (Sedlexing.Utf8.lexeme buf).[1] in
     double_quoted_string buf (acc ^ control_char escaped)
+  | ("\\z", Opt white_space) ->
+    double_quoted_string buf acc
   | Compl (Chars "\\") ->
     double_quoted_string buf (acc ^ Sedlexing.Utf8.lexeme buf)
   | _ -> raise (Lexer_error "Unexpected double quoted string character")
@@ -126,6 +128,14 @@ let%expect_test _ =
 let%expect_test _ =
   print {|"a\vb"|};
   [%expect {| (Ok ((Token.String "a\011b"), 6)) |}]
+
+let%expect_test _ =
+  print {|"a\zb"|};
+  [%expect {| (Ok ((Token.String "ab"), 6)) |}]
+
+let%expect_test _ =
+  print {|"a\z b"|};
+  [%expect {| (Ok ((Token.String "ab"), 7)) |}]
 
 let%expect_test _ =
   print {|"a\xb"|};
