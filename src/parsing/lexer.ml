@@ -87,8 +87,28 @@ let%expect_test _ =
   [%expect {| (Ok ((Token.Id "a"), 2)) |}]
 
 let%expect_test _ =
+  print {|1|};
+  [%expect {| (Ok ((Token.Number "1"), 1)) |}]
+
+let%expect_test _ =
   print {|=|};
   [%expect {| (Ok (Token.Equal, 1)) |}]
+
+let%expect_test _ =
+  print {|"a"|};
+  [%expect {| (Ok ((Token.String "a"), 3)) |}]
+
+let%expect_test _ =
+  print {|[[a]]|};
+  [%expect {| (Ok ((Token.String "a"), 5)) |}]
+
+let%expect_test _ =
+  print {|[==[a[b]==]|};
+  [%expect {| (Ok ((Token.String "a[b"), 11)) |}]
+
+let%expect_test _ =
+  print {|"é"|};
+  [%expect {| (Ok ((Token.String "\195\169"), 3)) |}]
 
 let%expect_test _ =
   print {|[|};
