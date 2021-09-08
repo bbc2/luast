@@ -1,5 +1,14 @@
 (executable
  (name cli)
+ (modules Cli)
  (libraries containers sedlex luast.parsing luast.parser)
+ (preprocess
+  (pps sedlex.ppx ppx_deriving.std)))
+
+(executable
+ (name fmt)
+ (public_name luafmt)
+ (modules Fmt)
+ (libraries containers luast.parser luast.fmt)
  (preprocess
   (pps sedlex.ppx ppx_deriving.std)))

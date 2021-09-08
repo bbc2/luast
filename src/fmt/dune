@@ -1,0 +1,7 @@
+(library
+ (name luast__fmt)
+ (public_name luast.fmt)
+ (libraries containers luast.ast)
+ (inline_tests)
+ (preprocess
+  (pps ppx_deriving.std ppx_expect)))
