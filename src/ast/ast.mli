@@ -6,10 +6,15 @@ module Numeral : sig
   type t = Integer of Int64.t [@@deriving eq, ord, show]
 end
 
-module Exp : sig
+module rec Field : sig
+  type t = Exp of Exp.t [@@deriving eq, ord, show]
+end
+
+and Exp : sig
   type t =
     | Nil
     | Numeral of Numeral.t
+    | Table of Field.t list
   [@@deriving eq, ord, show]
 end
 

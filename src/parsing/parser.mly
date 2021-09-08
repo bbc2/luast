@@ -4,9 +4,10 @@
 
 (* %token If Then Else *)
 %token Nil Return
-%token Comma Equal
+%token Comma Semi_colon Equal
 %token <string> Id
 %token <Int64.t> Integer
+%token Left_curly Right_curly
 (*
 %token <string> Number
 %token <string> String
@@ -41,5 +42,21 @@ let var :=
 let exp :=
   | Nil; {Nil}
   | integer = Integer; {Numeral (Integer integer)}
+  | tableconstructor
+
+let tableconstructor :=
+  | Left_curly; ~ = fields; Right_curly; <Exp.Table>
+
+let fields :=
+  | {[]}
+  | field = field; {[field]}
+  | field = field; fieldsep; fields = fields; {field :: fields}
+
+let field :=
+  | ~ = exp; <Field.Exp>
+
+let fieldsep :=
+  | Comma
+  | Semi_colon
 
 %%

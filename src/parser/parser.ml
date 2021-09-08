@@ -38,6 +38,75 @@ let%expect_test _ =
             ret = None }) |}]
 
 let%expect_test _ =
+  print {|a = {}|};
+  [%expect
+    {|
+      (Ok { Ast.Block.stats =
+            [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+               exps = [(Ast.Exp.Table [])]}
+              ];
+            ret = None }) |}]
+
+let%expect_test _ =
+  print {|a = {;}|};
+  [%expect {|
+      (Error "Grammar error") |}]
+
+let%expect_test _ =
+  print {|a = {0}|};
+  [%expect
+    {|
+      (Ok { Ast.Block.stats =
+            [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+               exps =
+               [(Ast.Exp.Table
+                   [(Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)))])
+                 ]}
+              ];
+            ret = None }) |}]
+
+let%expect_test _ =
+  print {|a = {0;}|};
+  [%expect
+    {|
+      (Ok { Ast.Block.stats =
+            [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+               exps =
+               [(Ast.Exp.Table
+                   [(Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)))])
+                 ]}
+              ];
+            ret = None }) |}]
+
+let%expect_test _ =
+  print {|a = {0; 1}|};
+  [%expect
+    {|
+      (Ok { Ast.Block.stats =
+            [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+               exps =
+               [(Ast.Exp.Table
+                   [(Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)));
+                     (Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 1L)))])
+                 ]}
+              ];
+            ret = None }) |}]
+
+let%expect_test _ =
+  print {|a = {0, 1;}|};
+  [%expect
+    {|
+      (Ok { Ast.Block.stats =
+            [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+               exps =
+               [(Ast.Exp.Table
+                   [(Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)));
+                     (Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 1L)))])
+                 ]}
+              ];
+            ret = None }) |}]
+
+let%expect_test _ =
   print {|a|};
   [%expect {| (Error "Grammar error") |}]
 
