@@ -107,6 +107,43 @@ let%expect_test _ =
             ret = None }) |}]
 
 let%expect_test _ =
+  print {|a, b = 0, 1|};
+  [%expect
+    {|
+    (Ok { Ast.Block.stats =
+          [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a"); (Ast.Var.Name "b")];
+             exps =
+             [(Ast.Exp.Numeral (Ast.Numeral.Integer 0L));
+               (Ast.Exp.Numeral (Ast.Numeral.Integer 1L))]}
+            ];
+          ret = None }) |}]
+
+let%expect_test _ =
+  print {|return|};
+  [%expect {| (Ok { Ast.Block.stats = []; ret = (Some []) }) |}]
+
+let%expect_test _ =
+  print {|return;|};
+  [%expect {| (Ok { Ast.Block.stats = []; ret = (Some []) }) |}]
+
+let%expect_test _ =
+  print {|return 0|};
+  [%expect
+    {|
+    (Ok { Ast.Block.stats = [];
+          ret = (Some [(Ast.Exp.Numeral (Ast.Numeral.Integer 0L))]) }) |}]
+
+let%expect_test _ =
+  print {|return 0, 1|};
+  [%expect
+    {|
+    (Ok { Ast.Block.stats = [];
+          ret =
+          (Some [(Ast.Exp.Numeral (Ast.Numeral.Integer 0L));
+                  (Ast.Exp.Numeral (Ast.Numeral.Integer 1L))])
+          }) |}]
+
+let%expect_test _ =
   print {|a|};
   [%expect {| (Error "Grammar error") |}]
 

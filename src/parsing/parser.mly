@@ -34,7 +34,7 @@ let explist :=
   | ~ = separated_nonempty_list(Comma, exp); <>
 
 let retstat :=
-  | Return; {[]}
+  | Return; exps = option(explist); option(Semi_colon); {exps |> CCOpt.get_or ~default:[]}
 
 let var :=
   | ~ = Id; <Var.Name>

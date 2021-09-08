@@ -89,6 +89,7 @@ let rec parse_token buf : Token.t =
   | "nil" -> Nil
   | "not" -> Not
   | "or" -> Or
+  | "return" -> Return
   | "repeat" -> Repeat
   | "then" -> Then
   | "true" -> True
