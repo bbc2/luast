@@ -1,44 +1,71 @@
+let format_comma_sep fmt () = Format.fprintf fmt ",@;<1 2>"
+
+let trailing_sep sep =
+  Format.pp_print_custom_break ~fits:("", 0, "") ~breaks:(sep, 0, "")
+
 let var_to_string (var : Luast__ast.Ast.Var.t) =
   match var with
   | Name str -> str
 
-let rec field_to_string (field : Luast__ast.Ast.Field.t) =
+let rec format_field fmt (field : Luast__ast.Ast.Field.t) =
   match field with
-  | Exp exp -> exp_to_string exp
+  | Exp exp ->
+    Format.pp_open_hvbox fmt 0;
+    format_exp fmt exp;
+    Format.pp_close_box fmt ()
 
-and exp_to_string (exp : Luast__ast.Ast.Exp.t) =
+and format_exp fmt (exp : Luast__ast.Ast.Exp.t) =
   match exp with
-  | Nil -> "nil"
-  | Numeral (Integer n) -> Printf.sprintf "%Ld" n
+  | Nil -> Format.fprintf fmt "nil"
+  | Numeral (Integer n) -> Format.fprintf fmt "%Ld" n
   | Table fields ->
-    "{" ^ CCString.concat ", " (fields |> CCList.map field_to_string) ^ "}"
+    if fields = [] then
+      Format.fprintf fmt "{}"
+    else (
+      Format.fprintf fmt "{@;<0 2>";
+      Format.pp_print_list ~pp_sep:format_comma_sep format_field fmt fields;
+      Format.fprintf fmt "%t}" (trailing_sep ",")
+    )
 
-let stat_to_string (stat : Luast__ast.Ast.Stat.t) =
+let format_exps fmt exps = Format.pp_print_list format_exp fmt exps
+
+let format_stat fmt (stat : Luast__ast.Ast.Stat.t) =
   match stat with
   | Assignment {vars; exps} ->
     let vs = CCString.concat ", " (vars |> CCList.map var_to_string) in
-    let es = CCString.concat ", " (exps |> CCList.map exp_to_string) in
-    Printf.sprintf "%s = %s" vs es
+    Format.pp_open_hvbox fmt 0;
+    Format.fprintf fmt "%s = " vs;
+    format_exps fmt exps;
+    Format.pp_close_box fmt ()
 
-let stats_to_string stats =
-  let concatenated =
-    CCString.concat "\n" (stats |> CCList.map stat_to_string)
-  in
-  if stats = [] then
-    concatenated
-  else
-    concatenated ^ "\n"
+let format_stats fmt stats =
+  Format.pp_open_vbox fmt 0;
+  Format.pp_print_list format_stat fmt stats;
+  Format.pp_close_box fmt ()
 
-let ret_to_string ret =
+let format_ret fmt ret =
   match ret with
-  | None -> ""
+  | None -> ()
   | Some exps ->
-    let exps = CCString.concat ", " (exps |> CCList.map exp_to_string) in
-    Printf.sprintf "return %s" exps
+    Format.fprintf fmt "return";
+    if exps != [] then (
+      Format.pp_print_space fmt ();
+      format_exps fmt exps
+    )
 
 let format_chunk chunk =
+  let buffer = Buffer.create 0 in
+  let fmt = Format.formatter_of_buffer buffer in
+  Format.pp_set_margin fmt 90;
   let {Luast__ast.Ast.Block.stats; ret} = chunk in
-  Printf.sprintf "%s%s" (stats_to_string stats) (ret_to_string ret)
+  Format.pp_open_vbox fmt 0;
+  format_stats fmt stats;
+  if stats != [] && CCOpt.is_some ret then Format.pp_print_cut fmt ();
+  format_ret fmt ret;
+  if stats != [] || CCOpt.is_some ret then Format.pp_print_cut fmt ();
+  Format.pp_close_box fmt ();
+  Format.pp_print_flush fmt ();
+  Buffer.contents buffer
 
 let print str = str |> format_chunk |> print_string
 
@@ -48,7 +75,9 @@ let%expect_test _ =
 
 let%expect_test _ =
   print {stats = []; ret = Some [Numeral (Integer 0L)]};
-  [%expect {| return 0 |}]
+  [%expect {|
+    return
+    0 |}]
 
 let%expect_test _ =
   print
@@ -56,4 +85,5 @@ let%expect_test _ =
     ; ret = Some [Numeral (Integer 1L)] };
   [%expect {|
     a = 0
-    return 1 |}]
+    return
+    1 |}]
