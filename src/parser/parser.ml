@@ -77,7 +77,7 @@ let%expect_test _ =
     {|
       (Ok { Ast.Block.stats =
             [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
-               exps = [(Ast.Exp.Str "a")]}
+               exps = [(Ast.Exp.Str (Ast.Str.Short "a"))]}
               ];
             ret = None }) |}]
 

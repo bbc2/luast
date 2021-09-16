@@ -18,7 +18,16 @@ and format_exp fmt (exp : Luast__ast.Ast.Exp.t) =
   match exp with
   | Nil -> Format.fprintf fmt "nil"
   | Numeral (Integer n) -> Format.fprintf fmt "%Ld" n
-  | Str str -> Format.fprintf fmt "%S" str
+  | Str (Short str) -> Format.fprintf fmt "%S" str
+  | Str (Long {level; leading_newline; value}) ->
+    let equal_signs = String.init level (fun _ -> '=') in
+    let newline =
+      if leading_newline then
+        "\n"
+      else
+        ""
+    in
+    Format.fprintf fmt "[%s[%s%s]%s]" equal_signs newline value equal_signs
   | Table fields ->
     if fields = [] then
       Format.fprintf fmt "{}"

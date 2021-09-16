@@ -7,7 +7,7 @@
 %token Comma Semi_colon Equal
 %token <string> Id
 %token <Int64.t> Integer
-%token <string> String
+%token <Str.t> Str
 %token Left_curly Right_curly
 %token Eof
 
@@ -39,7 +39,7 @@ let var :=
 let exp :=
   | Nil; {Nil}
   | integer = Integer; {Numeral (Integer integer)}
-  | ~ = String; <Exp.Str>
+  | ~ = Str; <Exp.Str>
   | tableconstructor
 
 let tableconstructor :=

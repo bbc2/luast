@@ -56,7 +56,7 @@ type t =
   | Triple_dot
   | Id of string
   | Integer of Int64.t
-  | String of string
+  | Str of Luast__ast.Ast.Str.t
   | Eof
 [@@deriving show]
 
@@ -120,5 +120,5 @@ let to_string = function
   | Triple_dot -> "Triple_dot"
   | Id id -> Printf.sprintf "Id: %s" id
   | Integer integer -> Printf.sprintf "Integer: %Ld" integer
-  | String str -> Printf.sprintf "String: %s" str
+  | Str str -> Printf.sprintf "String: %s" ([%show: Luast__ast.Ast.Str.t] str)
   | Eof -> "Eof"

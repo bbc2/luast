@@ -135,14 +135,16 @@ let rec parse_token buf : Token.t =
     | Failure _ -> raise (Lexer_error (Printf.sprintf "Not an integer: %s" str))
     )
   | Plus (Chars " ") -> parse_token buf
-  | Plus (Chars "'") -> String (quoted_string ~quote:Single buf "")
-  | Plus (Chars "\"") -> String (quoted_string ~quote:Double buf "")
+  | Plus (Chars "'") -> Str (Short (quoted_string ~quote:Single buf ""))
+  | Plus (Chars "\"") -> Str (Short (quoted_string ~quote:Double buf ""))
   | ("[", Star "=", "[", "\n") ->
     let level = CCString.length (Sedlexing.Utf8.lexeme buf) - 3 in
-    String (long_string ~level buf "")
+    Str
+      (Long {level; leading_newline = true; value = long_string ~level buf ""})
   | ("[", Star "=", "[") ->
     let level = CCString.length (Sedlexing.Utf8.lexeme buf) - 2 in
-    String (long_string ~level buf "")
+    Str
+      (Long {level; leading_newline = false; value = long_string ~level buf ""})
   | eof -> Eof
   | _ -> raise (Lexer_error "Unexpected beginning of token")
 
@@ -188,31 +190,31 @@ let%expect_test _ =
 
 let%expect_test _ =
   print {|"a"|};
-  [%expect {| (Ok ((Token.String "a"), 3)) |}]
+  [%expect {| (Ok ((Token.Str (Ast.Str.Short "a")), 3)) |}]
 
 let%expect_test _ =
   print {|"a'b"|};
-  [%expect {| (Ok ((Token.String "a'b"), 5)) |}]
+  [%expect {| (Ok ((Token.Str (Ast.Str.Short "a'b")), 5)) |}]
 
 let%expect_test _ =
   print {|"a\'b"|};
-  [%expect {| (Ok ((Token.String "a'b"), 6)) |}]
+  [%expect {| (Ok ((Token.Str (Ast.Str.Short "a'b")), 6)) |}]
 
 let%expect_test _ =
   print {|"a\nb"|};
-  [%expect {| (Ok ((Token.String "a\nb"), 6)) |}]
+  [%expect {| (Ok ((Token.Str (Ast.Str.Short "a\nb")), 6)) |}]
 
 let%expect_test _ =
   print {|"a\vb"|};
-  [%expect {| (Ok ((Token.String "a\011b"), 6)) |}]
+  [%expect {| (Ok ((Token.Str (Ast.Str.Short "a\011b")), 6)) |}]
 
 let%expect_test _ =
   print {|"a\zb"|};
-  [%expect {| (Ok ((Token.String "ab"), 6)) |}]
+  [%expect {| (Ok ((Token.Str (Ast.Str.Short "ab")), 6)) |}]
 
 let%expect_test _ =
   print {|"a\z b"|};
-  [%expect {| (Ok ((Token.String "ab"), 7)) |}]
+  [%expect {| (Ok ((Token.Str (Ast.Str.Short "ab")), 7)) |}]
 
 let%expect_test _ =
   print {|"a\xb"|};
@@ -220,19 +222,19 @@ let%expect_test _ =
 
 let%expect_test _ =
   print {|"a\"b"|};
-  [%expect {| (Ok ((Token.String "a\"b"), 6)) |}]
+  [%expect {| (Ok ((Token.Str (Ast.Str.Short "a\"b")), 6)) |}]
 
 let%expect_test _ =
   print {|"a'b"|};
-  [%expect {| (Ok ((Token.String "a'b"), 5)) |}]
+  [%expect {| (Ok ((Token.Str (Ast.Str.Short "a'b")), 5)) |}]
 
 let%expect_test _ =
   print {|'a'|};
-  [%expect {| (Ok ((Token.String "a"), 3)) |}]
+  [%expect {| (Ok ((Token.Str (Ast.Str.Short "a")), 3)) |}]
 
 let%expect_test _ =
   print {|'a"b'|};
-  [%expect {| (Ok ((Token.String "a\"b"), 5)) |}]
+  [%expect {| (Ok ((Token.Str (Ast.Str.Short "a\"b")), 5)) |}]
 
 let%expect_test _ =
   print "\"a\nb\"";
@@ -240,23 +242,34 @@ let%expect_test _ =
 
 let%expect_test _ =
   print "\"a\\\nb\"";
-  [%expect {| (Ok ((Token.String "a\nb"), 6)) |}]
+  [%expect {| (Ok ((Token.Str (Ast.Str.Short "a\nb")), 6)) |}]
 
 let%expect_test _ =
   print {|[[a]]|};
-  [%expect {| (Ok ((Token.String "a"), 5)) |}]
+  [%expect
+    {|
+    (Ok ((Token.Str
+            Ast.Str.Long {level = 0; leading_newline = false; value = "a"}),
+         5)) |}]
 
 let%expect_test _ =
   print "[[\na]]";
-  [%expect {| (Ok ((Token.String "a"), 6)) |}]
+  [%expect
+    {|
+    (Ok ((Token.Str Ast.Str.Long {level = 0; leading_newline = true; value = "a"}),
+         6)) |}]
 
 let%expect_test _ =
   print {|[==[a[b]==]|};
-  [%expect {| (Ok ((Token.String "a[b"), 11)) |}]
+  [%expect
+    {|
+    (Ok ((Token.Str
+            Ast.Str.Long {level = 2; leading_newline = false; value = "a[b"}),
+         11)) |}]
 
 let%expect_test _ =
   print {|"é"|};
-  [%expect {| (Ok ((Token.String "\195\169"), 3)) |}]
+  [%expect {| (Ok ((Token.Str (Ast.Str.Short "\195\169")), 3)) |}]
 
 let%expect_test _ =
   print {|[|};

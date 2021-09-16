@@ -6,6 +6,16 @@ module Numeral = struct
   type t = Integer of Int64.t [@@deriving eq, ord, show]
 end
 
+module Str = struct
+  type t =
+    | Short of string
+    | Long of
+        { level : int  (** Number of equal signs *)
+        ; leading_newline : bool
+        ; value : string }
+  [@@deriving eq, ord, show]
+end
+
 module rec Field : sig
   type t = Exp of Exp.t [@@deriving eq, ord, show]
 end = struct
@@ -16,14 +26,14 @@ and Exp : sig
   type t =
     | Nil
     | Numeral of Numeral.t
-    | Str of string
+    | Str of Str.t
     | Table of Field.t list
   [@@deriving eq, ord, show]
 end = struct
   type t =
     | Nil
     | Numeral of Numeral.t
-    | Str of string
+    | Str of Str.t
     | Table of Field.t list
   [@@deriving eq, ord, show]
 end
