@@ -137,6 +137,9 @@ let rec parse_token buf : Token.t =
   | Plus (Chars " ") -> parse_token buf
   | Plus (Chars "'") -> String (quoted_string ~quote:Single buf "")
   | Plus (Chars "\"") -> String (quoted_string ~quote:Double buf "")
+  | ("[", Star "=", "[", "\n") ->
+    let level = CCString.length (Sedlexing.Utf8.lexeme buf) - 3 in
+    String (long_string ~level buf "")
   | ("[", Star "=", "[") ->
     let level = CCString.length (Sedlexing.Utf8.lexeme buf) - 2 in
     String (long_string ~level buf "")
@@ -242,6 +245,10 @@ let%expect_test _ =
 let%expect_test _ =
   print {|[[a]]|};
   [%expect {| (Ok ((Token.String "a"), 5)) |}]
+
+let%expect_test _ =
+  print "[[\na]]";
+  [%expect {| (Ok ((Token.String "a"), 6)) |}]
 
 let%expect_test _ =
   print {|[==[a[b]==]|};
