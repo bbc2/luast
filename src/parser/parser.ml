@@ -72,6 +72,16 @@ let%expect_test _ =
             ret = None }) |}]
 
 let%expect_test _ =
+  print {|a = "a"|};
+  [%expect
+    {|
+      (Ok { Ast.Block.stats =
+            [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+               exps = [(Ast.Exp.Str "a")]}
+              ];
+            ret = None }) |}]
+
+let%expect_test _ =
   print {|a = {}|};
   [%expect
     {|

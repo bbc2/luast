@@ -18,6 +18,7 @@ and format_exp fmt (exp : Luast__ast.Ast.Exp.t) =
   match exp with
   | Nil -> Format.fprintf fmt "nil"
   | Numeral (Integer n) -> Format.fprintf fmt "%Ld" n
+  | Str str -> Format.fprintf fmt "%S" str
   | Table fields ->
     if fields = [] then
       Format.fprintf fmt "{}"

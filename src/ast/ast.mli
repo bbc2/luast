@@ -14,6 +14,7 @@ and Exp : sig
   type t =
     | Nil
     | Numeral of Numeral.t
+    | Str of string
     | Table of Field.t list
   [@@deriving eq, ord, show]
 end
