@@ -134,7 +134,6 @@ let rec parse_token buf : Token.t =
     try Integer (Int64.of_string str) with
     | Failure _ -> raise (Lexer_error (Printf.sprintf "Not an integer: %s" str))
     )
-  | Plus (Chars " ") -> parse_token buf
   | Plus (Chars "'") -> Str (Short (quoted_string ~quote:Single buf ""))
   | Plus (Chars "\"") -> Str (Short (quoted_string ~quote:Double buf ""))
   | ("[", Star "=", "[", "\n") ->
