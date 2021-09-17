@@ -61,5 +61,3 @@ type t =
 [@@deriving show]
 
 type token = t
-
-val to_string : t -> string
