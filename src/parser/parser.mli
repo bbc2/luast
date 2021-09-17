@@ -5,18 +5,12 @@ module Origin : sig
   [@@deriving eq, ord, show]
 end
 
-module Position : sig
-  type t =
-    { line : int
-    ; column : int }
-  [@@deriving eq, ord, show]
-end
-
 module Parser_error : sig
   type t =
-    { position : Position.t
+    { position : Luast__ast.Position.t
     ; origin : Origin.t }
   [@@deriving eq, ord, show]
 end
 
-val parse_chunk : string -> (Luast__ast.Ast.Chunk.t, Parser_error.t) result
+val parse_chunk :
+  string -> (Luast__ast.Chunk_with_comments.t, Parser_error.t) result

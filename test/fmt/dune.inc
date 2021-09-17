@@ -6,6 +6,13 @@
  (action (diff cases/assignment.exp assignment.out)))
 
 (rule
+ (with-stdout-to comment.out (run %{bin:luafmt} %{dep:cases/comment.lua})))
+
+(rule
+ (alias runtest)
+ (action (diff cases/comment.exp comment.out)))
+
+(rule
  (with-stdout-to empty.out (run %{bin:luafmt} %{dep:cases/empty.lua})))
 
 (rule

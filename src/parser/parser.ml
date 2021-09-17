@@ -5,33 +5,28 @@ module Origin = struct
   [@@deriving eq, ord, show]
 end
 
-module Position = struct
-  type t =
-    { line : int
-    ; column : int }
-  [@@deriving eq, ord, show]
-end
-
 module Parser_error = struct
   type t =
-    { position : Position.t
+    { position : Luast__ast.Position.t
     ; origin : Origin.t }
   [@@deriving eq, ord, show]
 end
 
-let next_token buffer () =
+let next_token ~comments buffer () =
   let (begin_, end_) = Sedlexing.lexing_positions buffer in
-  (Luast__parsing.Lexer.parse_token buffer, begin_, end_)
+  let {Luast__parsing.Lexer.Step.token; comments = new_comments} =
+    Luast__parsing.Lexer.parse_token buffer
+  in
+  comments := CCList.append !comments new_comments;
+  (token, begin_, end_)
 
 let parse buffer parser =
-  MenhirLib.Convert.Simplified.traditional2revised parser (next_token buffer)
-
-let get_position buffer =
-  let ({Lexing.pos_fname = _; pos_lnum; pos_bol; pos_cnum}, _) =
-    Sedlexing.lexing_positions buffer
+  let comments = ref [] in
+  let tree =
+    MenhirLib.Convert.Simplified.traditional2revised parser
+      (next_token ~comments buffer)
   in
-  let column = pos_cnum - pos_bol + 1 in
-  {Position.line = pos_lnum; column}
+  (tree, !comments)
 
 let parse_chunk str =
   let buffer = Sedlexing.Utf8.from_string str in
@@ -40,176 +35,207 @@ let parse_chunk str =
   Sedlexing.set_position buffer
     {pos_lnum = 1; pos_cnum = 0; pos_bol = 0; pos_fname = ""};
 
-  try Ok (parse buffer Luast__parsing.Parser.chunk) with
-  | Luast__parsing.Parser.Error ->
-    Error {Parser_error.position = get_position buffer; origin = Parser}
-  | Luast__parsing.Lexer.Lexer_error str ->
-    Error {position = get_position buffer; origin = Lexer str}
+  match parse buffer Luast__parsing.Parser.chunk with
+  | (tree, comments) -> Ok {Luast__ast.Chunk_with_comments.tree; comments}
+  | exception Luast__parsing.Parser.Error ->
+    Error
+      { Parser_error.position = (Luast__parsing.Util.get_location buffer).begin_
+      ; origin = Parser }
+  | exception Luast__parsing.Lexer.Lexer_error str ->
+    Error
+      { position = (Luast__parsing.Util.get_location buffer).begin_
+      ; origin = Lexer str }
 
 let print str =
   str
   |> parse_chunk
-  |> [%show: (Luast__ast.Ast.Chunk.t, Parser_error.t) result]
+  |> [%show: (Luast__ast.Chunk_with_comments.t, Parser_error.t) result]
   |> print_string
 
 let%expect_test _ =
   print {|a = nil|};
   [%expect
     {|
-      (Ok { Ast.Block.stats =
-            [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")]; exps = [Ast.Exp.Nil]}
-              ];
-            ret = None }) |}]
+      (Ok { Chunk_with_comments.tree =
+            { Ast.Block.stats =
+              [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+                 exps = [Ast.Exp.Nil]}
+                ];
+              ret = None };
+            comments = [] }) |}]
 
 let%expect_test _ =
   print {|a = 0|};
   [%expect
     {|
-      (Ok { Ast.Block.stats =
-            [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
-               exps = [(Ast.Exp.Numeral (Ast.Numeral.Integer 0L))]}
-              ];
-            ret = None }) |}]
+      (Ok { Chunk_with_comments.tree =
+            { Ast.Block.stats =
+              [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+                 exps = [(Ast.Exp.Numeral (Ast.Numeral.Integer 0L))]}
+                ];
+              ret = None };
+            comments = [] }) |}]
 
 let%expect_test _ =
   print {|a = "a"|};
   [%expect
     {|
-      (Ok { Ast.Block.stats =
-            [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
-               exps = [(Ast.Exp.Str (Ast.Str.Short "a"))]}
-              ];
-            ret = None }) |}]
+      (Ok { Chunk_with_comments.tree =
+            { Ast.Block.stats =
+              [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+                 exps = [(Ast.Exp.Str (Ast.Str.Short "a"))]}
+                ];
+              ret = None };
+            comments = [] }) |}]
 
 let%expect_test _ =
   print {|a = {}|};
   [%expect
     {|
-      (Ok { Ast.Block.stats =
-            [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
-               exps = [(Ast.Exp.Table [])]}
-              ];
-            ret = None }) |}]
+      (Ok { Chunk_with_comments.tree =
+            { Ast.Block.stats =
+              [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+                 exps = [(Ast.Exp.Table [])]}
+                ];
+              ret = None };
+            comments = [] }) |}]
 
 let%expect_test _ =
   print {|a = {;}|};
   [%expect
     {|
-      (Error { Parser.Parser_error.position =
-               { Parser.Position.line = 1; column = 6 };
+      (Error { Parser.Parser_error.position = { Position.line = 1; column = 6 };
                origin = Parser.Origin.Parser }) |}]
 
 let%expect_test _ =
   print {|a = {0}|};
   [%expect
     {|
-      (Ok { Ast.Block.stats =
-            [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
-               exps =
-               [(Ast.Exp.Table
-                   [(Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)))])
-                 ]}
-              ];
-            ret = None }) |}]
+      (Ok { Chunk_with_comments.tree =
+            { Ast.Block.stats =
+              [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+                 exps =
+                 [(Ast.Exp.Table
+                     [(Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)))])
+                   ]}
+                ];
+              ret = None };
+            comments = [] }) |}]
 
 let%expect_test _ =
   print {|a = {0;}|};
   [%expect
     {|
-      (Ok { Ast.Block.stats =
-            [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
-               exps =
-               [(Ast.Exp.Table
-                   [(Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)))])
-                 ]}
-              ];
-            ret = None }) |}]
+      (Ok { Chunk_with_comments.tree =
+            { Ast.Block.stats =
+              [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+                 exps =
+                 [(Ast.Exp.Table
+                     [(Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)))])
+                   ]}
+                ];
+              ret = None };
+            comments = [] }) |}]
 
 let%expect_test _ =
   print {|a = {0; 1}|};
   [%expect
     {|
-      (Ok { Ast.Block.stats =
-            [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
-               exps =
-               [(Ast.Exp.Table
-                   [(Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)));
-                     (Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 1L)))])
-                 ]}
-              ];
-            ret = None }) |}]
+      (Ok { Chunk_with_comments.tree =
+            { Ast.Block.stats =
+              [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+                 exps =
+                 [(Ast.Exp.Table
+                     [(Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)));
+                       (Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 1L)))])
+                   ]}
+                ];
+              ret = None };
+            comments = [] }) |}]
 
 let%expect_test _ =
   print {|a = {0, 1;}|};
   [%expect
     {|
-      (Ok { Ast.Block.stats =
-            [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
-               exps =
-               [(Ast.Exp.Table
-                   [(Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)));
-                     (Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 1L)))])
-                 ]}
-              ];
-            ret = None }) |}]
+      (Ok { Chunk_with_comments.tree =
+            { Ast.Block.stats =
+              [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+                 exps =
+                 [(Ast.Exp.Table
+                     [(Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)));
+                       (Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 1L)))])
+                   ]}
+                ];
+              ret = None };
+            comments = [] }) |}]
 
 let%expect_test _ =
   print {|a, b = 0, 1|};
   [%expect
     {|
-    (Ok { Ast.Block.stats =
-          [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a"); (Ast.Var.Name "b")];
-             exps =
-             [(Ast.Exp.Numeral (Ast.Numeral.Integer 0L));
-               (Ast.Exp.Numeral (Ast.Numeral.Integer 1L))]}
-            ];
-          ret = None }) |}]
+    (Ok { Chunk_with_comments.tree =
+          { Ast.Block.stats =
+            [Ast.Stat.Assignment {
+               vars = [(Ast.Var.Name "a"); (Ast.Var.Name "b")];
+               exps =
+               [(Ast.Exp.Numeral (Ast.Numeral.Integer 0L));
+                 (Ast.Exp.Numeral (Ast.Numeral.Integer 1L))]}
+              ];
+            ret = None };
+          comments = [] }) |}]
 
 let%expect_test _ =
   print {|return|};
-  [%expect {| (Ok { Ast.Block.stats = []; ret = (Some []) }) |}]
+  [%expect
+    {|
+    (Ok { Chunk_with_comments.tree = { Ast.Block.stats = []; ret = (Some []) };
+          comments = [] }) |}]
 
 let%expect_test _ =
   print {|return;|};
-  [%expect {| (Ok { Ast.Block.stats = []; ret = (Some []) }) |}]
+  [%expect
+    {|
+    (Ok { Chunk_with_comments.tree = { Ast.Block.stats = []; ret = (Some []) };
+          comments = [] }) |}]
 
 let%expect_test _ =
   print {|return 0|};
   [%expect
     {|
-    (Ok { Ast.Block.stats = [];
-          ret = (Some [(Ast.Exp.Numeral (Ast.Numeral.Integer 0L))]) }) |}]
+    (Ok { Chunk_with_comments.tree =
+          { Ast.Block.stats = [];
+            ret = (Some [(Ast.Exp.Numeral (Ast.Numeral.Integer 0L))]) };
+          comments = [] }) |}]
 
 let%expect_test _ =
   print {|return 0, 1|};
   [%expect
     {|
-    (Ok { Ast.Block.stats = [];
-          ret =
-          (Some [(Ast.Exp.Numeral (Ast.Numeral.Integer 0L));
-                  (Ast.Exp.Numeral (Ast.Numeral.Integer 1L))])
-          }) |}]
+    (Ok { Chunk_with_comments.tree =
+          { Ast.Block.stats = [];
+            ret =
+            (Some [(Ast.Exp.Numeral (Ast.Numeral.Integer 0L));
+                    (Ast.Exp.Numeral (Ast.Numeral.Integer 1L))])
+            };
+          comments = [] }) |}]
 
 let%expect_test _ =
   print {|a|};
   [%expect
     {|
-    (Error { Parser.Parser_error.position =
-             { Parser.Position.line = 1; column = 2 };
+    (Error { Parser.Parser_error.position = { Position.line = 1; column = 2 };
              origin = Parser.Origin.Parser }) |}]
 
 let%expect_test _ =
   print "a = 1\nb";
   [%expect
     {|
-    (Error { Parser.Parser_error.position =
-             { Parser.Position.line = 2; column = 2 };
+    (Error { Parser.Parser_error.position = { Position.line = 2; column = 2 };
              origin = Parser.Origin.Parser }) |}]
 
 let%expect_test _ =
   print {|?|};
   [%expect
     {|
-    (Error { Parser.Parser_error.position =
-             { Parser.Position.line = 1; column = 1 };
+    (Error { Parser.Parser_error.position = { Position.line = 1; column = 1 };
              origin = (Parser.Origin.Lexer "Unexpected beginning of token") }) |}]

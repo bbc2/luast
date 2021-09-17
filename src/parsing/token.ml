@@ -58,6 +58,6 @@ type t =
   | Integer of Int64.t
   | Str of Luast__ast.Ast.Str.t
   | Eof
-[@@deriving show]
+[@@deriving eq, ord, show]
 
 type token = t
