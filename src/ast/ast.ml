@@ -52,8 +52,8 @@ end
 
 module Block = struct
   type t =
-    { stats : Stat.t list
-    ; ret : Retstat.t option }
+    { stats : Stat.t Located.t list
+    ; ret : Retstat.t Located.t option }
   [@@deriving eq, ord, show]
 end
 

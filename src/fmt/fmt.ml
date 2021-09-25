@@ -39,8 +39,8 @@ and format_exp fmt (exp : Luast__ast.Ast.Exp.t) =
 
 let format_exps fmt exps = Format.pp_print_list format_exp fmt exps
 
-let format_stat fmt (stat : Luast__ast.Ast.Stat.t) =
-  match stat with
+let format_stat fmt (stat : Luast__ast.Ast.Stat.t Luast__ast.Located.t) =
+  match stat.value with
   | Assignment {vars; exps} ->
     let vs = CCString.concat ", " (vars |> CCList.map var_to_string) in
     Format.pp_open_hvbox fmt 0;
@@ -53,10 +53,11 @@ let format_stats fmt stats =
   Format.pp_print_list format_stat fmt stats;
   Format.pp_close_box fmt ()
 
-let format_ret fmt ret =
+let format_ret fmt (ret : Luast__ast.Ast.Retstat.t Luast__ast.Located.t option)
+    =
   match ret with
   | None -> ()
-  | Some exps ->
+  | Some {value = exps; loc = _} ->
     Format.fprintf fmt "return";
     if exps != [] then (
       Format.pp_print_space fmt ();
@@ -84,15 +85,31 @@ let%expect_test _ =
   [%expect {| |}]
 
 let%expect_test _ =
-  print {stats = []; ret = Some [Numeral (Integer 0L)]};
+  print
+    { stats = []
+    ; ret =
+        Some
+          { value = [Numeral (Integer 0L)]
+          ; loc =
+              {begin_ = {line = 1; column = 1}; end_ = {line = 1; column = 8}}
+          } };
   [%expect {|
     return
     0 |}]
 
 let%expect_test _ =
   print
-    { stats = [Assignment {vars = [Name "a"]; exps = [Numeral (Integer 0L)]}]
-    ; ret = Some [Numeral (Integer 1L)] };
+    { stats =
+        [ { value = Assignment {vars = [Name "a"]; exps = [Numeral (Integer 0L)]}
+          ; loc =
+              {begin_ = {line = 1; column = 1}; end_ = {line = 1; column = 6}}
+          } ]
+    ; ret =
+        Some
+          { value = [Numeral (Integer 1L)]
+          ; loc =
+              {begin_ = {line = 1; column = 1}; end_ = {line = 1; column = 8}}
+          } };
   [%expect {|
     a = 0
     return

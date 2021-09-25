@@ -56,49 +56,69 @@ let%expect_test _ =
   print {|a = nil|};
   [%expect
     {|
-      (Ok { Chunk_with_comments.tree =
-            { Ast.Block.stats =
-              [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
-                 exps = [Ast.Exp.Nil]}
-                ];
-              ret = None };
-            comments = [] }) |}]
+    (Ok { Chunk_with_comments.tree =
+          { Ast.Block.stats =
+            [{ Located.value =
+               Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+                 exps = [Ast.Exp.Nil]};
+               loc =
+               { Location.begin_ = { Position.line = 1; column = 1 };
+                 end_ = { Position.line = 1; column = 8 } }
+               }
+              ];
+            ret = None };
+          comments = [] }) |}]
 
 let%expect_test _ =
   print {|a = 0|};
   [%expect
     {|
-      (Ok { Chunk_with_comments.tree =
-            { Ast.Block.stats =
-              [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
-                 exps = [(Ast.Exp.Numeral (Ast.Numeral.Integer 0L))]}
-                ];
-              ret = None };
-            comments = [] }) |}]
+    (Ok { Chunk_with_comments.tree =
+          { Ast.Block.stats =
+            [{ Located.value =
+               Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+                 exps = [(Ast.Exp.Numeral (Ast.Numeral.Integer 0L))]};
+               loc =
+               { Location.begin_ = { Position.line = 1; column = 1 };
+                 end_ = { Position.line = 1; column = 6 } }
+               }
+              ];
+            ret = None };
+          comments = [] }) |}]
 
 let%expect_test _ =
   print {|a = "a"|};
   [%expect
     {|
-      (Ok { Chunk_with_comments.tree =
-            { Ast.Block.stats =
-              [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
-                 exps = [(Ast.Exp.Str (Ast.Str.Short "a"))]}
-                ];
-              ret = None };
-            comments = [] }) |}]
+    (Ok { Chunk_with_comments.tree =
+          { Ast.Block.stats =
+            [{ Located.value =
+               Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+                 exps = [(Ast.Exp.Str (Ast.Str.Short "a"))]};
+               loc =
+               { Location.begin_ = { Position.line = 1; column = 1 };
+                 end_ = { Position.line = 1; column = 8 } }
+               }
+              ];
+            ret = None };
+          comments = [] }) |}]
 
 let%expect_test _ =
   print {|a = {}|};
   [%expect
     {|
-      (Ok { Chunk_with_comments.tree =
-            { Ast.Block.stats =
-              [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
-                 exps = [(Ast.Exp.Table [])]}
-                ];
-              ret = None };
-            comments = [] }) |}]
+    (Ok { Chunk_with_comments.tree =
+          { Ast.Block.stats =
+            [{ Located.value =
+               Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+                 exps = [(Ast.Exp.Table [])]};
+               loc =
+               { Location.begin_ = { Position.line = 1; column = 1 };
+                 end_ = { Position.line = 1; column = 7 } }
+               }
+              ];
+            ret = None };
+          comments = [] }) |}]
 
 let%expect_test _ =
   print {|a = {;}|};
@@ -111,63 +131,85 @@ let%expect_test _ =
   print {|a = {0}|};
   [%expect
     {|
-      (Ok { Chunk_with_comments.tree =
-            { Ast.Block.stats =
-              [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+    (Ok { Chunk_with_comments.tree =
+          { Ast.Block.stats =
+            [{ Located.value =
+               Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
                  exps =
                  [(Ast.Exp.Table
                      [(Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)))])
-                   ]}
-                ];
-              ret = None };
-            comments = [] }) |}]
+                   ]};
+               loc =
+               { Location.begin_ = { Position.line = 1; column = 1 };
+                 end_ = { Position.line = 1; column = 8 } }
+               }
+              ];
+            ret = None };
+          comments = [] }) |}]
 
 let%expect_test _ =
   print {|a = {0;}|};
   [%expect
     {|
-      (Ok { Chunk_with_comments.tree =
-            { Ast.Block.stats =
-              [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+    (Ok { Chunk_with_comments.tree =
+          { Ast.Block.stats =
+            [{ Located.value =
+               Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
                  exps =
                  [(Ast.Exp.Table
                      [(Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)))])
-                   ]}
-                ];
-              ret = None };
-            comments = [] }) |}]
+                   ]};
+               loc =
+               { Location.begin_ = { Position.line = 1; column = 1 };
+                 end_ = { Position.line = 1; column = 9 } }
+               }
+              ];
+            ret = None };
+          comments = [] }) |}]
 
 let%expect_test _ =
   print {|a = {0; 1}|};
   [%expect
     {|
-      (Ok { Chunk_with_comments.tree =
-            { Ast.Block.stats =
-              [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+    (Ok { Chunk_with_comments.tree =
+          { Ast.Block.stats =
+            [{ Located.value =
+               Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
                  exps =
                  [(Ast.Exp.Table
                      [(Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)));
-                       (Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 1L)))])
-                   ]}
-                ];
-              ret = None };
-            comments = [] }) |}]
+                       (Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 1L)))
+                       ])
+                   ]};
+               loc =
+               { Location.begin_ = { Position.line = 1; column = 1 };
+                 end_ = { Position.line = 1; column = 11 } }
+               }
+              ];
+            ret = None };
+          comments = [] }) |}]
 
 let%expect_test _ =
   print {|a = {0, 1;}|};
   [%expect
     {|
-      (Ok { Chunk_with_comments.tree =
-            { Ast.Block.stats =
-              [Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+    (Ok { Chunk_with_comments.tree =
+          { Ast.Block.stats =
+            [{ Located.value =
+               Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
                  exps =
                  [(Ast.Exp.Table
                      [(Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)));
-                       (Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 1L)))])
-                   ]}
-                ];
-              ret = None };
-            comments = [] }) |}]
+                       (Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 1L)))
+                       ])
+                   ]};
+               loc =
+               { Location.begin_ = { Position.line = 1; column = 1 };
+                 end_ = { Position.line = 1; column = 12 } }
+               }
+              ];
+            ret = None };
+          comments = [] }) |}]
 
 let%expect_test _ =
   print {|a, b = 0, 1|};
@@ -175,27 +217,73 @@ let%expect_test _ =
     {|
     (Ok { Chunk_with_comments.tree =
           { Ast.Block.stats =
-            [Ast.Stat.Assignment {
-               vars = [(Ast.Var.Name "a"); (Ast.Var.Name "b")];
-               exps =
-               [(Ast.Exp.Numeral (Ast.Numeral.Integer 0L));
-                 (Ast.Exp.Numeral (Ast.Numeral.Integer 1L))]}
+            [{ Located.value =
+               Ast.Stat.Assignment {
+                 vars = [(Ast.Var.Name "a"); (Ast.Var.Name "b")];
+                 exps =
+                 [(Ast.Exp.Numeral (Ast.Numeral.Integer 0L));
+                   (Ast.Exp.Numeral (Ast.Numeral.Integer 1L))]};
+               loc =
+               { Location.begin_ = { Position.line = 1; column = 1 };
+                 end_ = { Position.line = 1; column = 12 } }
+               }
               ];
             ret = None };
           comments = [] }) |}]
 
 let%expect_test _ =
+  print "a = 0\nb = 1";
+  [%expect
+    {|
+      (Ok { Chunk_with_comments.tree =
+            { Ast.Block.stats =
+              [{ Located.value =
+                 Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
+                   exps = [(Ast.Exp.Numeral (Ast.Numeral.Integer 0L))]};
+                 loc =
+                 { Location.begin_ = { Position.line = 1; column = 1 };
+                   end_ = { Position.line = 1; column = 6 } }
+                 };
+                { Located.value =
+                  Ast.Stat.Assignment {vars = [(Ast.Var.Name "b")];
+                    exps = [(Ast.Exp.Numeral (Ast.Numeral.Integer 1L))]};
+                  loc =
+                  { Location.begin_ = { Position.line = 2; column = 1 };
+                    end_ = { Position.line = 2; column = 6 } }
+                  }
+                ];
+              ret = None };
+            comments = [] })
+      |}]
+
+let%expect_test _ =
   print {|return|};
   [%expect
     {|
-    (Ok { Chunk_with_comments.tree = { Ast.Block.stats = []; ret = (Some []) };
+    (Ok { Chunk_with_comments.tree =
+          { Ast.Block.stats = [];
+            ret =
+            (Some { Located.value = [];
+                    loc =
+                    { Location.begin_ = { Position.line = 1; column = 1 };
+                      end_ = { Position.line = 1; column = 7 } }
+                    })
+            };
           comments = [] }) |}]
 
 let%expect_test _ =
   print {|return;|};
   [%expect
     {|
-    (Ok { Chunk_with_comments.tree = { Ast.Block.stats = []; ret = (Some []) };
+    (Ok { Chunk_with_comments.tree =
+          { Ast.Block.stats = [];
+            ret =
+            (Some { Located.value = [];
+                    loc =
+                    { Location.begin_ = { Position.line = 1; column = 1 };
+                      end_ = { Position.line = 1; column = 8 } }
+                    })
+            };
           comments = [] }) |}]
 
 let%expect_test _ =
@@ -204,7 +292,13 @@ let%expect_test _ =
     {|
     (Ok { Chunk_with_comments.tree =
           { Ast.Block.stats = [];
-            ret = (Some [(Ast.Exp.Numeral (Ast.Numeral.Integer 0L))]) };
+            ret =
+            (Some { Located.value = [(Ast.Exp.Numeral (Ast.Numeral.Integer 0L))];
+                    loc =
+                    { Location.begin_ = { Position.line = 1; column = 1 };
+                      end_ = { Position.line = 1; column = 9 } }
+                    })
+            };
           comments = [] }) |}]
 
 let%expect_test _ =
@@ -214,8 +308,13 @@ let%expect_test _ =
     (Ok { Chunk_with_comments.tree =
           { Ast.Block.stats = [];
             ret =
-            (Some [(Ast.Exp.Numeral (Ast.Numeral.Integer 0L));
-                    (Ast.Exp.Numeral (Ast.Numeral.Integer 1L))])
+            (Some { Located.value =
+                    [(Ast.Exp.Numeral (Ast.Numeral.Integer 0L));
+                      (Ast.Exp.Numeral (Ast.Numeral.Integer 1L))];
+                    loc =
+                    { Location.begin_ = { Position.line = 1; column = 1 };
+                      end_ = { Position.line = 1; column = 12 } }
+                    })
             };
           comments = [] }) |}]
 

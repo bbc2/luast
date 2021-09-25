@@ -1,5 +1,10 @@
 %{
   open Luast__ast.Ast
+
+  let loc (begin_, end_) =
+    { Luast__ast.Location.begin_ = Util.get_position begin_
+    ; end_ = Util.get_position end_
+    }
 %}
 
 (* %token If Then Else *)
@@ -22,7 +27,8 @@ let block :=
   | stats = list(stat); ret = option(retstat); {{Block.stats; ret}}
 
 let stat :=
-  | vars = varlist; Equal; exps = explist; {Stat.Assignment {vars; exps}}
+  | vars = varlist; Equal; exps = explist;
+  {{Luast__ast.Located.value = Stat.Assignment {vars; exps}; loc = loc $sloc}}
 
 let varlist :=
   | ~ = separated_nonempty_list(Comma, var); <>
@@ -31,7 +37,8 @@ let explist :=
   | ~ = separated_nonempty_list(Comma, exp); <>
 
 let retstat :=
-  | Return; exps = option(explist); option(Semi_colon); {exps |> CCOpt.get_or ~default:[]}
+  | Return; exps = option(explist); option(Semi_colon);
+  {{Luast__ast.Located.value = exps |> CCOpt.get_or ~default:[]; loc = loc $sloc}}
 
 let var :=
   | ~ = Id; <Var.Name>
