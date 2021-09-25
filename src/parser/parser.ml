@@ -30,7 +30,7 @@ let get_position buffer =
   let ({Lexing.pos_fname = _; pos_lnum; pos_bol; pos_cnum}, _) =
     Sedlexing.lexing_positions buffer
   in
-  let column = pos_cnum - pos_bol in
+  let column = pos_cnum - pos_bol + 1 in
   {Position.line = pos_lnum; column}
 
 let parse_chunk str =
@@ -38,7 +38,7 @@ let parse_chunk str =
 
   (* Make Sedlex track the position in the input string. *)
   Sedlexing.set_position buffer
-    {pos_lnum = 1; pos_cnum = 1; pos_bol = 0; pos_fname = ""};
+    {pos_lnum = 1; pos_cnum = 0; pos_bol = 0; pos_fname = ""};
 
   try Ok (parse buffer Luast__parsing.Parser.chunk) with
   | Luast__parsing.Parser.Error ->
@@ -203,7 +203,7 @@ let%expect_test _ =
   [%expect
     {|
     (Error { Parser.Parser_error.position =
-             { Parser.Position.line = 2; column = 1 };
+             { Parser.Position.line = 2; column = 2 };
              origin = Parser.Origin.Parser }) |}]
 
 let%expect_test _ =
