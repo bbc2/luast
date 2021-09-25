@@ -14,7 +14,9 @@ let gen_case name =
     name name name name
 
 let () =
-  Sys.readdir "cases"
+  let cases = Sys.readdir "cases" in
+  Array.sort String.compare cases;
+  cases
   |> Array.to_seq
   |> Seq.filter_map extract_name
   |> Seq.map gen_case
