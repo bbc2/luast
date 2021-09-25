@@ -13,10 +13,10 @@ module Parser_error = struct
 end
 
 let next_token ~comments buffer () =
-  let (begin_, end_) = Sedlexing.lexing_positions buffer in
   let {Luast__parsing.Lexer.Step.token; comments = new_comments} =
     Luast__parsing.Lexer.parse_token buffer
   in
+  let (begin_, end_) = Sedlexing.lexing_positions buffer in
   comments := CCList.append !comments new_comments;
   (token, begin_, end_)
 
