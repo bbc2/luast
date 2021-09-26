@@ -35,9 +35,15 @@ let parse_chunk str =
   Sedlexing.set_position buffer
     {pos_lnum = 1; pos_cnum = 0; pos_bol = 0; pos_fname = ""};
 
-  match parse buffer Luast__parsing.Parser.chunk with
-  | (tree, comments) -> Ok {Luast__ast.Chunk_with_comments.tree; comments}
-  | exception Luast__parsing.Parser.Error ->
+  let locations = ref [] in
+  let module Param = struct
+    let add_loc loc = locations := loc :: !locations
+  end in
+  let module Parser = Luast__parsing.Parser.Make (Param) in
+  match parse buffer Parser.chunk with
+  | (tree, comments) ->
+    Ok {Luast__ast.Chunk_with_comments.tree; locations = !locations; comments}
+  | exception Parser.Error ->
     Error
       { Parser_error.position = (Luast__parsing.Util.get_location buffer).begin_
       ; origin = Parser }
@@ -67,6 +73,10 @@ let%expect_test _ =
                }
               ];
             ret = None };
+          locations =
+          [{ Location.begin_ = { Position.line = 1; column = 1 };
+             end_ = { Position.line = 1; column = 8 } }
+            ];
           comments = [] }) |}]
 
 let%expect_test _ =
@@ -84,6 +94,10 @@ let%expect_test _ =
                }
               ];
             ret = None };
+          locations =
+          [{ Location.begin_ = { Position.line = 1; column = 1 };
+             end_ = { Position.line = 1; column = 6 } }
+            ];
           comments = [] }) |}]
 
 let%expect_test _ =
@@ -101,6 +115,10 @@ let%expect_test _ =
                }
               ];
             ret = None };
+          locations =
+          [{ Location.begin_ = { Position.line = 1; column = 1 };
+             end_ = { Position.line = 1; column = 8 } }
+            ];
           comments = [] }) |}]
 
 let%expect_test _ =
@@ -118,6 +136,10 @@ let%expect_test _ =
                }
               ];
             ret = None };
+          locations =
+          [{ Location.begin_ = { Position.line = 1; column = 1 };
+             end_ = { Position.line = 1; column = 7 } }
+            ];
           comments = [] }) |}]
 
 let%expect_test _ =
@@ -145,6 +167,10 @@ let%expect_test _ =
                }
               ];
             ret = None };
+          locations =
+          [{ Location.begin_ = { Position.line = 1; column = 1 };
+             end_ = { Position.line = 1; column = 8 } }
+            ];
           comments = [] }) |}]
 
 let%expect_test _ =
@@ -165,6 +191,10 @@ let%expect_test _ =
                }
               ];
             ret = None };
+          locations =
+          [{ Location.begin_ = { Position.line = 1; column = 1 };
+             end_ = { Position.line = 1; column = 9 } }
+            ];
           comments = [] }) |}]
 
 let%expect_test _ =
@@ -187,6 +217,10 @@ let%expect_test _ =
                }
               ];
             ret = None };
+          locations =
+          [{ Location.begin_ = { Position.line = 1; column = 1 };
+             end_ = { Position.line = 1; column = 11 } }
+            ];
           comments = [] }) |}]
 
 let%expect_test _ =
@@ -209,6 +243,10 @@ let%expect_test _ =
                }
               ];
             ret = None };
+          locations =
+          [{ Location.begin_ = { Position.line = 1; column = 1 };
+             end_ = { Position.line = 1; column = 12 } }
+            ];
           comments = [] }) |}]
 
 let%expect_test _ =
@@ -229,6 +267,10 @@ let%expect_test _ =
                }
               ];
             ret = None };
+          locations =
+          [{ Location.begin_ = { Position.line = 1; column = 1 };
+             end_ = { Position.line = 1; column = 12 } }
+            ];
           comments = [] }) |}]
 
 let%expect_test _ =
@@ -253,6 +295,12 @@ let%expect_test _ =
                   }
                 ];
               ret = None };
+            locations =
+            [{ Location.begin_ = { Position.line = 2; column = 1 };
+               end_ = { Position.line = 2; column = 6 } };
+              { Location.begin_ = { Position.line = 1; column = 1 };
+                end_ = { Position.line = 1; column = 6 } }
+              ];
             comments = [] })
       |}]
 
@@ -269,6 +317,10 @@ let%expect_test _ =
                       end_ = { Position.line = 1; column = 7 } }
                     })
             };
+          locations =
+          [{ Location.begin_ = { Position.line = 1; column = 1 };
+             end_ = { Position.line = 1; column = 7 } }
+            ];
           comments = [] }) |}]
 
 let%expect_test _ =
@@ -284,6 +336,10 @@ let%expect_test _ =
                       end_ = { Position.line = 1; column = 8 } }
                     })
             };
+          locations =
+          [{ Location.begin_ = { Position.line = 1; column = 1 };
+             end_ = { Position.line = 1; column = 8 } }
+            ];
           comments = [] }) |}]
 
 let%expect_test _ =
@@ -299,6 +355,10 @@ let%expect_test _ =
                       end_ = { Position.line = 1; column = 9 } }
                     })
             };
+          locations =
+          [{ Location.begin_ = { Position.line = 1; column = 1 };
+             end_ = { Position.line = 1; column = 9 } }
+            ];
           comments = [] }) |}]
 
 let%expect_test _ =
@@ -316,6 +376,10 @@ let%expect_test _ =
                       end_ = { Position.line = 1; column = 12 } }
                     })
             };
+          locations =
+          [{ Location.begin_ = { Position.line = 1; column = 1 };
+             end_ = { Position.line = 1; column = 12 } }
+            ];
           comments = [] }) |}]
 
 let%expect_test _ =
