@@ -13,8 +13,7 @@ let () =
   let file = Sys.argv.(1) in
   let source = CCIO.with_in file (fun channel -> CCIO.read_all channel) in
   match Luast__parser.Parser.parse_chunk source with
-  | Ok {tree; comments = _; locations = _} ->
-    print_string (Luast__fmt.Fmt.format_chunk tree)
+  | Ok chunk -> print_string (Luast__fmt.Fmt.format_chunk chunk)
   | Error error ->
     Printf.eprintf "%s\n" (error_to_string error);
     exit 1

@@ -7,6 +7,26 @@ let var_to_string (var : Luast__ast.Ast.Var.t) =
   match var with
   | Name str -> str
 
+let comment_to_string (comment : Luast__ast.Comment.t) =
+  match comment.type_ with
+  | Short -> Printf.sprintf "--%s" comment.str
+  | Long {level} ->
+    let equal_signs = String.init level (fun _ -> '=') in
+    Printf.sprintf "--[%s[%s]%s]--" equal_signs comment.str equal_signs
+
+let format_comments_after fmt ~comments ~(position : Luast__ast.Position.t) =
+  let current_line = ref position.line in
+  comments
+  |> Comments.pop_comments_after position
+  |> CCList.iter (fun comment ->
+         let {Luast__ast.Comment.location = {begin_; _}; _} = comment in
+         if begin_.line > !current_line then
+           Format.pp_print_cut fmt ()
+         else
+           Format.fprintf fmt " ";
+         current_line := begin_.line;
+         Format.pp_print_string fmt (comment_to_string comment))
+
 let rec format_field fmt (field : Luast__ast.Ast.Field.t) =
   match field with
   | Exp exp ->
@@ -39,8 +59,8 @@ and format_exp fmt (exp : Luast__ast.Ast.Exp.t) =
 
 let format_exps fmt exps = Format.pp_print_list format_exp fmt exps
 
-let format_stat fmt (stat : Luast__ast.Ast.Stat.t Luast__ast.Located.t) =
-  match stat.value with
+let format_stat fmt (stat : Luast__ast.Ast.Stat.t) =
+  match stat with
   | Assignment {vars; exps} ->
     let vs = CCString.concat ", " (vars |> CCList.map var_to_string) in
     Format.pp_open_hvbox fmt 0;
@@ -48,9 +68,16 @@ let format_stat fmt (stat : Luast__ast.Ast.Stat.t Luast__ast.Located.t) =
     format_exps fmt exps;
     Format.pp_close_box fmt ()
 
-let format_stats fmt stats =
+let format_located_stat
+    fmt
+    (stat : Luast__ast.Ast.Stat.t Luast__ast.Located.t)
+    ~comments =
+  format_stat fmt stat.value;
+  format_comments_after fmt ~comments ~position:stat.loc.end_
+
+let format_stats fmt stats ~comments =
   Format.pp_open_vbox fmt 0;
-  Format.pp_print_list format_stat fmt stats;
+  Format.pp_print_list (format_located_stat ~comments) fmt stats;
   Format.pp_close_box fmt ()
 
 let format_ret fmt (ret : Luast__ast.Ast.Retstat.t Luast__ast.Located.t option)
@@ -64,53 +91,20 @@ let format_ret fmt (ret : Luast__ast.Ast.Retstat.t Luast__ast.Located.t option)
       format_exps fmt exps
     )
 
-let format_chunk chunk =
+let format_chunk chunk_with_comments =
+  let {Luast__ast.Chunk_with_comments.tree = chunk; locations; comments} =
+    chunk_with_comments
+  in
+  let comments = Comments.init ~code_locations:locations ~comments in
   let buffer = Buffer.create 0 in
   let fmt = Format.formatter_of_buffer buffer in
   Format.pp_set_margin fmt 90;
   let {Luast__ast.Ast.Block.stats; ret} = chunk in
   Format.pp_open_vbox fmt 0;
-  format_stats fmt stats;
+  format_stats fmt stats ~comments;
   if stats != [] && CCOpt.is_some ret then Format.pp_print_cut fmt ();
   format_ret fmt ret;
   if stats != [] || CCOpt.is_some ret then Format.pp_print_cut fmt ();
   Format.pp_close_box fmt ();
   Format.pp_print_flush fmt ();
   Buffer.contents buffer
-
-let print str = str |> format_chunk |> print_string
-
-let%expect_test _ =
-  print {stats = []; ret = None};
-  [%expect {| |}]
-
-let%expect_test _ =
-  print
-    { stats = []
-    ; ret =
-        Some
-          { value = [Numeral (Integer 0L)]
-          ; loc =
-              {begin_ = {line = 1; column = 1}; end_ = {line = 1; column = 8}}
-          } };
-  [%expect {|
-    return
-    0 |}]
-
-let%expect_test _ =
-  print
-    { stats =
-        [ { value = Assignment {vars = [Name "a"]; exps = [Numeral (Integer 0L)]}
-          ; loc =
-              {begin_ = {line = 1; column = 1}; end_ = {line = 1; column = 6}}
-          } ]
-    ; ret =
-        Some
-          { value = [Numeral (Integer 1L)]
-          ; loc =
-              {begin_ = {line = 1; column = 1}; end_ = {line = 1; column = 8}}
-          } };
-  [%expect {|
-    a = 0
-    return
-    1 |}]

@@ -188,13 +188,14 @@ let rec parse_token_with_comments
     let begin_ = (Util.get_location buf).begin_ in
     let str = long_comment ~level buf "" in
     let end_ = (Util.get_location buf).end_ in
-    comments := {str; location = {begin_; end_}} :: !comments;
+    comments :=
+      {type_ = Long {level}; str; location = {begin_; end_}} :: !comments;
     parse_token_with_comments ~comments buf
   | "--" ->
     let begin_ = (Util.get_location buf).begin_ in
     let str = short_comment buf in
     let end_ = (Util.get_location buf).end_ in
-    comments := {str; location = {begin_; end_}} :: !comments;
+    comments := {type_ = Short; str; location = {begin_; end_}} :: !comments;
     parse_token_with_comments ~comments buf
   | eof -> Eof
   | _ -> raise (Lexer_error "Unexpected beginning of token")
@@ -231,7 +232,7 @@ let%expect_test _ =
     {|
       (Ok ({ Lexer.Step.token = Token.Eof;
              comments =
-             [{ Comment.str = "";
+             [{ Comment.type_ = Comment.Type.Short; str = "";
                 location =
                 { Location.begin_ = { Position.line = 1; column = 1 };
                   end_ = { Position.line = 1; column = 3 } }
@@ -246,7 +247,7 @@ let%expect_test _ =
     {|
       (Ok ({ Lexer.Step.token = Token.Eof;
              comments =
-             [{ Comment.str = "a";
+             [{ Comment.type_ = Comment.Type.Short; str = "a";
                 location =
                 { Location.begin_ = { Position.line = 1; column = 1 };
                   end_ = { Position.line = 1; column = 4 } }
@@ -261,7 +262,7 @@ let%expect_test _ =
     {|
     (Ok ({ Lexer.Step.token = (Token.Id "b");
            comments =
-           [{ Comment.str = "a";
+           [{ Comment.type_ = Comment.Type.Short; str = "a";
               location =
               { Location.begin_ = { Position.line = 1; column = 1 };
                 end_ = { Position.line = 2; column = 1 } }
@@ -276,7 +277,7 @@ let%expect_test _ =
     {|
       (Ok ({ Lexer.Step.token = Token.Eof;
              comments =
-             [{ Comment.str = "a";
+             [{ Comment.type_ = Comment.Type.Long {level = 0}; str = "a";
                 location =
                 { Location.begin_ = { Position.line = 1; column = 1 };
                   end_ = { Position.line = 1; column = 10 } }
@@ -291,7 +292,7 @@ let%expect_test _ =
     {|
       (Ok ({ Lexer.Step.token = Token.Eof;
              comments =
-             [{ Comment.str = "a";
+             [{ Comment.type_ = Comment.Type.Long {level = 2}; str = "a";
                 location =
                 { Location.begin_ = { Position.line = 1; column = 1 };
                   end_ = { Position.line = 1; column = 14 } }
@@ -306,7 +307,7 @@ let%expect_test _ =
     {|
     (Ok ({ Lexer.Step.token = Token.Eof;
            comments =
-           [{ Comment.str = "a]]--\n";
+           [{ Comment.type_ = Comment.Type.Long {level = 2}; str = "a]]--\n";
               location =
               { Location.begin_ = { Position.line = 1; column = 1 };
                 end_ = { Position.line = 2; column = 7 } }
