@@ -3,7 +3,8 @@ exception Lexer_error of string
 module Step = struct
   type t =
     { token : Token.t
-    ; comments : Luast__ast.Comment.t list }
+    ; comments : Luast__ast.Comment.t list
+    ; empty_spaces : Luast__ast.Empty_space.t list }
   [@@deriving eq, ord, show]
 end
 
@@ -106,9 +107,16 @@ let short_comment buf =
 
 let rec parse_token_with_comments
     ~(comments : Luast__ast.Comment.t list ref)
+    ~(empty_spaces : Luast__ast.Empty_space.t list ref)
     buf : Token.t =
   match%sedlex buf with
-  | white_space -> parse_token_with_comments ~comments buf
+  | Plus white_space ->
+    let location = Util.get_location buf in
+    let line_count = location.end_.line - location.begin_.line - 1 in
+    if line_count > 0 then
+      empty_spaces :=
+        {first_line = location.begin_.line + 1; line_count} :: !empty_spaces;
+    parse_token_with_comments ~comments ~empty_spaces buf
   | "and" -> And
   | "break" -> Break
   | "do" -> Do
@@ -187,20 +195,21 @@ let rec parse_token_with_comments
     let end_ = (Util.get_location buf).end_ in
     comments :=
       {type_ = Long {level}; str; location = {begin_; end_}} :: !comments;
-    parse_token_with_comments ~comments buf
+    parse_token_with_comments ~comments ~empty_spaces buf
   | "--" ->
     let begin_ = (Util.get_location buf).begin_ in
     let str = short_comment buf in
     let end_ = (Util.get_location buf).end_ in
     comments := {type_ = Short; str; location = {begin_; end_}} :: !comments;
-    parse_token_with_comments ~comments buf
+    parse_token_with_comments ~comments ~empty_spaces buf
   | eof -> Eof
   | _ -> raise (Lexer_error "Unexpected beginning of token")
 
 let parse_token buf =
   let comments = ref [] in
-  let token = parse_token_with_comments ~comments buf in
-  {Step.token; comments = !comments}
+  let empty_spaces = ref [] in
+  let token = parse_token_with_comments ~comments ~empty_spaces buf in
+  {Step.token; comments = !comments; empty_spaces = !empty_spaces}
 
 let lex str =
   let buf = Sedlexing.Utf8.from_string str in
@@ -221,7 +230,8 @@ let print str =
 
 let%expect_test _ =
   print "";
-  [%expect {| (Ok ({ Lexer.Step.token = Token.Eof; comments = [] }, 0)) |}]
+  [%expect
+    {| (Ok ({ Lexer.Step.token = Token.Eof; comments = []; empty_spaces = [] }, 0)) |}]
 
 let%expect_test _ =
   print "--";
@@ -234,8 +244,8 @@ let%expect_test _ =
                 { Location.begin_ = { Position.line = 1; column = 1 };
                   end_ = { Position.line = 1; column = 3 } }
                 }
-               ]
-             },
+               ];
+             empty_spaces = [] },
            2)) |}]
 
 let%expect_test _ =
@@ -249,8 +259,8 @@ let%expect_test _ =
                 { Location.begin_ = { Position.line = 1; column = 1 };
                   end_ = { Position.line = 1; column = 4 } }
                 }
-               ]
-             },
+               ];
+             empty_spaces = [] },
            3)) |}]
 
 let%expect_test _ =
@@ -264,8 +274,8 @@ let%expect_test _ =
               { Location.begin_ = { Position.line = 1; column = 1 };
                 end_ = { Position.line = 1; column = 4 } }
               }
-             ]
-           },
+             ];
+           empty_spaces = [] },
          5)) |}]
 
 let%expect_test _ =
@@ -279,8 +289,8 @@ let%expect_test _ =
                 { Location.begin_ = { Position.line = 1; column = 1 };
                   end_ = { Position.line = 1; column = 10 } }
                 }
-               ]
-             },
+               ];
+             empty_spaces = [] },
            9)) |}]
 
 let%expect_test _ =
@@ -294,8 +304,8 @@ let%expect_test _ =
                 { Location.begin_ = { Position.line = 1; column = 1 };
                   end_ = { Position.line = 1; column = 14 } }
                 }
-               ]
-             },
+               ];
+             empty_spaces = [] },
            13)) |}]
 
 let%expect_test _ =
@@ -309,26 +319,37 @@ let%expect_test _ =
               { Location.begin_ = { Position.line = 1; column = 1 };
                 end_ = { Position.line = 2; column = 7 } }
               }
-             ]
-           },
+             ];
+           empty_spaces = [] },
          18)) |}]
 
 let%expect_test _ =
   print "\n";
-  [%expect {| (Ok ({ Lexer.Step.token = Token.Eof; comments = [] }, 1)) |}]
+  [%expect
+    {|
+    (Ok ({ Lexer.Step.token = Token.Eof; comments = []; empty_spaces = [] }, 1)) |}]
 
 let%expect_test _ =
   print {|a|};
-  [%expect {| (Ok ({ Lexer.Step.token = (Token.Id "a"); comments = [] }, 1)) |}]
+  [%expect
+    {|
+    (Ok ({ Lexer.Step.token = (Token.Id "a"); comments = []; empty_spaces = [] },
+         1)) |}]
 
 let%expect_test _ =
   print {| a|};
-  [%expect {| (Ok ({ Lexer.Step.token = (Token.Id "a"); comments = [] }, 2)) |}]
+  [%expect
+    {|
+    (Ok ({ Lexer.Step.token = (Token.Id "a"); comments = []; empty_spaces = [] },
+         2)) |}]
 
 let%expect_test _ =
   print {|1|};
   [%expect
-    {| (Ok ({ Lexer.Step.token = (Token.Integer 1L); comments = [] }, 1)) |}]
+    {|
+      (Ok ({ Lexer.Step.token = (Token.Integer 1L); comments = [];
+             empty_spaces = [] },
+           1)) |}]
 
 let%expect_test _ =
   print {|10000000000000000000|};
@@ -336,54 +357,63 @@ let%expect_test _ =
 
 let%expect_test _ =
   print {|=|};
-  [%expect {| (Ok ({ Lexer.Step.token = Token.Equal; comments = [] }, 1)) |}]
+  [%expect
+    {| (Ok ({ Lexer.Step.token = Token.Equal; comments = []; empty_spaces = [] }, 1)) |}]
 
 let%expect_test _ =
   print {|"a"|};
   [%expect
-    {| (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "a")); comments = [] }, 3)) |}]
+    {|
+      (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "a")); comments = [];
+             empty_spaces = [] },
+           3)) |}]
 
 let%expect_test _ =
   print {|"a'b"|};
   [%expect
     {|
-    (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "a'b")); comments = [] },
+    (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "a'b")); comments = [];
+           empty_spaces = [] },
          5)) |}]
 
 let%expect_test _ =
   print {|"a\'b"|};
   [%expect
     {|
-    (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "a'b")); comments = [] },
+    (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "a'b")); comments = [];
+           empty_spaces = [] },
          6)) |}]
 
 let%expect_test _ =
   print {|"a\nb"|};
   [%expect
     {|
-    (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "a\nb")); comments = [] },
+    (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "a\nb")); comments = [];
+           empty_spaces = [] },
          6)) |}]
 
 let%expect_test _ =
   print {|"a\vb"|};
   [%expect
     {|
-    (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "a\011b")); comments = []
-           },
+    (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "a\011b"));
+           comments = []; empty_spaces = [] },
          6)) |}]
 
 let%expect_test _ =
   print {|"a\zb"|};
   [%expect
     {|
-    (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "ab")); comments = [] },
+    (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "ab")); comments = [];
+           empty_spaces = [] },
          6)) |}]
 
 let%expect_test _ =
   print {|"a\z b"|};
   [%expect
     {|
-    (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "ab")); comments = [] },
+    (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "ab")); comments = [];
+           empty_spaces = [] },
          7)) |}]
 
 let%expect_test _ =
@@ -394,26 +424,32 @@ let%expect_test _ =
   print {|"a\"b"|};
   [%expect
     {|
-    (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "a\"b")); comments = [] },
+    (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "a\"b")); comments = [];
+           empty_spaces = [] },
          6)) |}]
 
 let%expect_test _ =
   print {|"a'b"|};
   [%expect
     {|
-    (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "a'b")); comments = [] },
+    (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "a'b")); comments = [];
+           empty_spaces = [] },
          5)) |}]
 
 let%expect_test _ =
   print {|'a'|};
   [%expect
-    {| (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "a")); comments = [] }, 3)) |}]
+    {|
+      (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "a")); comments = [];
+             empty_spaces = [] },
+           3)) |}]
 
 let%expect_test _ =
   print {|'a"b'|};
   [%expect
     {|
-    (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "a\"b")); comments = [] },
+    (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "a\"b")); comments = [];
+           empty_spaces = [] },
          5)) |}]
 
 let%expect_test _ =
@@ -424,7 +460,8 @@ let%expect_test _ =
   print "\"a\\\nb\"";
   [%expect
     {|
-    (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "a\nb")); comments = [] },
+    (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "a\nb")); comments = [];
+           empty_spaces = [] },
          6)) |}]
 
 let%expect_test _ =
@@ -434,7 +471,7 @@ let%expect_test _ =
     (Ok ({ Lexer.Step.token =
            (Token.Str
               Ast.Str.Long {level = 0; leading_newline = false; value = "a"});
-           comments = [] },
+           comments = []; empty_spaces = [] },
          5)) |}]
 
 let%expect_test _ =
@@ -444,7 +481,7 @@ let%expect_test _ =
     (Ok ({ Lexer.Step.token =
            (Token.Str
               Ast.Str.Long {level = 0; leading_newline = true; value = "a"});
-           comments = [] },
+           comments = []; empty_spaces = [] },
          6)) |}]
 
 let%expect_test _ =
@@ -454,7 +491,7 @@ let%expect_test _ =
     (Ok ({ Lexer.Step.token =
            (Token.Str
               Ast.Str.Long {level = 2; leading_newline = false; value = "a[b"});
-           comments = [] },
+           comments = []; empty_spaces = [] },
          11)) |}]
 
 let%expect_test _ =
@@ -462,24 +499,34 @@ let%expect_test _ =
   [%expect
     {|
     (Ok ({ Lexer.Step.token = (Token.Str (Ast.Str.Short "\195\169"));
-           comments = [] },
+           comments = []; empty_spaces = [] },
          3)) |}]
 
 let%expect_test _ =
   print {|[|};
   [%expect
-    {| (Ok ({ Lexer.Step.token = Token.Left_square; comments = [] }, 1)) |}]
+    {|
+      (Ok ({ Lexer.Step.token = Token.Left_square; comments = []; empty_spaces = []
+             },
+           1)) |}]
 
 let%expect_test _ =
   print {|.|};
-  [%expect {| (Ok ({ Lexer.Step.token = Token.Dot; comments = [] }, 1)) |}]
+  [%expect
+    {| (Ok ({ Lexer.Step.token = Token.Dot; comments = []; empty_spaces = [] }, 1)) |}]
 
 let%expect_test _ =
   print {|..|};
   [%expect
-    {| (Ok ({ Lexer.Step.token = Token.Double_dot; comments = [] }, 2)) |}]
+    {|
+      (Ok ({ Lexer.Step.token = Token.Double_dot; comments = []; empty_spaces = []
+             },
+           2)) |}]
 
 let%expect_test _ =
   print {|...|};
   [%expect
-    {| (Ok ({ Lexer.Step.token = Token.Triple_dot; comments = [] }, 3)) |}]
+    {|
+      (Ok ({ Lexer.Step.token = Token.Triple_dot; comments = []; empty_spaces = []
+             },
+           3)) |}]

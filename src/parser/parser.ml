@@ -12,21 +12,25 @@ module Parser_error = struct
   [@@deriving eq, ord, show]
 end
 
-let next_token ~comments buffer () =
-  let {Luast__parsing.Lexer.Step.token; comments = new_comments} =
+let next_token ~comments ~empty_spaces buffer () =
+  let { Luast__parsing.Lexer.Step.token
+      ; comments = new_comments
+      ; empty_spaces = new_empty_spaces } =
     Luast__parsing.Lexer.parse_token buffer
   in
   let (begin_, end_) = Sedlexing.lexing_positions buffer in
   comments := CCList.append !comments new_comments;
+  empty_spaces := CCList.append !empty_spaces new_empty_spaces;
   (token, begin_, end_)
 
 let parse buffer parser =
   let comments = ref [] in
+  let empty_spaces = ref [] in
   let tree =
     MenhirLib.Convert.Simplified.traditional2revised parser
-      (next_token ~comments buffer)
+      (next_token ~comments ~empty_spaces buffer)
   in
-  (tree, !comments)
+  (tree, !comments, !empty_spaces)
 
 let parse_chunk str =
   let buffer = Sedlexing.Utf8.from_string str in
@@ -41,8 +45,12 @@ let parse_chunk str =
   end in
   let module Parser = Luast__parsing.Parser.Make (Param) in
   match parse buffer Parser.chunk with
-  | (tree, comments) ->
-    Ok {Luast__ast.Chunk_with_comments.tree; locations = !locations; comments}
+  | (tree, comments, empty_spaces) ->
+    Ok
+      { Luast__ast.Chunk_with_comments.tree
+      ; locations = !locations
+      ; comments
+      ; empty_spaces }
   | exception Parser.Error ->
     Error
       { Parser_error.position = (Luast__parsing.Util.get_location buffer).begin_
@@ -77,7 +85,7 @@ let%expect_test _ =
           [{ Location.begin_ = { Position.line = 1; column = 1 };
              end_ = { Position.line = 1; column = 8 } }
             ];
-          comments = [] }) |}]
+          comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
   print {|a = 0|};
@@ -98,7 +106,7 @@ let%expect_test _ =
           [{ Location.begin_ = { Position.line = 1; column = 1 };
              end_ = { Position.line = 1; column = 6 } }
             ];
-          comments = [] }) |}]
+          comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
   print {|a = "a"|};
@@ -119,7 +127,7 @@ let%expect_test _ =
           [{ Location.begin_ = { Position.line = 1; column = 1 };
              end_ = { Position.line = 1; column = 8 } }
             ];
-          comments = [] }) |}]
+          comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
   print {|a = {}|};
@@ -140,7 +148,7 @@ let%expect_test _ =
           [{ Location.begin_ = { Position.line = 1; column = 1 };
              end_ = { Position.line = 1; column = 7 } }
             ];
-          comments = [] }) |}]
+          comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
   print {|a = {;}|};
@@ -171,7 +179,7 @@ let%expect_test _ =
           [{ Location.begin_ = { Position.line = 1; column = 1 };
              end_ = { Position.line = 1; column = 8 } }
             ];
-          comments = [] }) |}]
+          comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
   print {|a = {0;}|};
@@ -195,7 +203,7 @@ let%expect_test _ =
           [{ Location.begin_ = { Position.line = 1; column = 1 };
              end_ = { Position.line = 1; column = 9 } }
             ];
-          comments = [] }) |}]
+          comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
   print {|a = {0; 1}|};
@@ -221,7 +229,7 @@ let%expect_test _ =
           [{ Location.begin_ = { Position.line = 1; column = 1 };
              end_ = { Position.line = 1; column = 11 } }
             ];
-          comments = [] }) |}]
+          comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
   print {|a = {0, 1;}|};
@@ -247,7 +255,7 @@ let%expect_test _ =
           [{ Location.begin_ = { Position.line = 1; column = 1 };
              end_ = { Position.line = 1; column = 12 } }
             ];
-          comments = [] }) |}]
+          comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
   print {|a, b = 0, 1|};
@@ -271,7 +279,7 @@ let%expect_test _ =
           [{ Location.begin_ = { Position.line = 1; column = 1 };
              end_ = { Position.line = 1; column = 12 } }
             ];
-          comments = [] }) |}]
+          comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
   print "a = 0\nb = 1";
@@ -301,7 +309,7 @@ let%expect_test _ =
               { Location.begin_ = { Position.line = 1; column = 1 };
                 end_ = { Position.line = 1; column = 6 } }
               ];
-            comments = [] })
+            comments = []; empty_spaces = [] })
       |}]
 
 let%expect_test _ =
@@ -321,7 +329,7 @@ let%expect_test _ =
           [{ Location.begin_ = { Position.line = 1; column = 1 };
              end_ = { Position.line = 1; column = 7 } }
             ];
-          comments = [] }) |}]
+          comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
   print {|return;|};
@@ -340,7 +348,7 @@ let%expect_test _ =
           [{ Location.begin_ = { Position.line = 1; column = 1 };
              end_ = { Position.line = 1; column = 8 } }
             ];
-          comments = [] }) |}]
+          comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
   print {|return 0|};
@@ -359,7 +367,7 @@ let%expect_test _ =
           [{ Location.begin_ = { Position.line = 1; column = 1 };
              end_ = { Position.line = 1; column = 9 } }
             ];
-          comments = [] }) |}]
+          comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
   print {|return 0, 1|};
@@ -380,7 +388,7 @@ let%expect_test _ =
           [{ Location.begin_ = { Position.line = 1; column = 1 };
              end_ = { Position.line = 1; column = 12 } }
             ];
-          comments = [] }) |}]
+          comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
   print {|a|};

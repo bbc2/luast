@@ -14,18 +14,32 @@ let comment_to_string (comment : Luast__ast.Comment.t) =
     let equal_signs = String.init level (fun _ -> '=') in
     Printf.sprintf "--[%s[%s]%s]--" equal_signs comment.str equal_signs
 
-let format_comments_after fmt ~comments ~(position : Luast__ast.Position.t) =
+let format_empty_space_after
+    fmt
+    ~empty_spaces
+    ~(position : Luast__ast.Position.t) =
+  let line_count =
+    Empty_spaces.empty_lines ~line:(position.line + 1) empty_spaces
+  in
+  if line_count > 0 then Format.pp_print_cut fmt ()
+
+let format_comments_after
+    fmt
+    ~comments
+    ~empty_spaces
+    ~(position : Luast__ast.Position.t) =
   let current_line = ref position.line in
   comments
   |> Comments.pop_comments_after position
   |> CCList.iter (fun comment ->
-         let {Luast__ast.Comment.location = {begin_; _}; _} = comment in
+         let {Luast__ast.Comment.location = {begin_; end_}; _} = comment in
          if begin_.line > !current_line then
            Format.pp_print_cut fmt ()
          else
            Format.fprintf fmt " ";
          current_line := begin_.line;
-         Format.pp_print_string fmt (comment_to_string comment))
+         Format.pp_print_string fmt (comment_to_string comment);
+         format_empty_space_after fmt ~empty_spaces ~position:end_)
 
 let rec format_field fmt (field : Luast__ast.Ast.Field.t) =
   match field with
@@ -71,13 +85,15 @@ let format_stat fmt (stat : Luast__ast.Ast.Stat.t) =
 let format_located_stat
     fmt
     (stat : Luast__ast.Ast.Stat.t Luast__ast.Located.t)
-    ~comments =
+    ~comments
+    ~empty_spaces =
   format_stat fmt stat.value;
-  format_comments_after fmt ~comments ~position:stat.loc.end_
+  format_empty_space_after fmt ~empty_spaces ~position:stat.loc.end_;
+  format_comments_after fmt ~comments ~empty_spaces ~position:stat.loc.end_
 
-let format_stats fmt stats ~comments =
+let format_stats fmt stats ~comments ~empty_spaces =
   Format.pp_open_vbox fmt 0;
-  Format.pp_print_list (format_located_stat ~comments) fmt stats;
+  Format.pp_print_list (format_located_stat ~comments ~empty_spaces) fmt stats;
   Format.pp_close_box fmt ()
 
 let format_ret fmt (ret : Luast__ast.Ast.Retstat.t Luast__ast.Located.t option)
@@ -92,16 +108,20 @@ let format_ret fmt (ret : Luast__ast.Ast.Retstat.t Luast__ast.Located.t option)
     )
 
 let format_chunk chunk_with_comments =
-  let {Luast__ast.Chunk_with_comments.tree = chunk; locations; comments} =
+  let { Luast__ast.Chunk_with_comments.tree = chunk
+      ; locations
+      ; comments
+      ; empty_spaces } =
     chunk_with_comments
   in
   let comments = Comments.init ~code_locations:locations ~comments in
+  let empty_spaces = Empty_spaces.init ~empty_spaces in
   let buffer = Buffer.create 0 in
   let fmt = Format.formatter_of_buffer buffer in
   Format.pp_set_margin fmt 90;
   let {Luast__ast.Ast.Block.stats; ret} = chunk in
   Format.pp_open_vbox fmt 0;
-  format_stats fmt stats ~comments;
+  format_stats fmt stats ~comments ~empty_spaces;
   if stats != [] && CCOpt.is_some ret then Format.pp_print_cut fmt ();
   format_ret fmt ret;
   if stats != [] || CCOpt.is_some ret then Format.pp_print_cut fmt ();

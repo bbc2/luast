@@ -20,6 +20,13 @@
  (action (diff cases/empty.exp empty.out)))
 
 (rule
+ (with-stdout-to empty_spaces.out (run %{bin:luafmt} %{dep:cases/empty_spaces.lua})))
+
+(rule
+ (alias runtest)
+ (action (diff cases/empty_spaces.exp empty_spaces.out)))
+
+(rule
  (with-stdout-to string.out (run %{bin:luafmt} %{dep:cases/string.lua})))
 
 (rule
