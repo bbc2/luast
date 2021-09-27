@@ -101,9 +101,6 @@ let rec long_comment ~level buf acc =
 
 let short_comment buf =
   match%sedlex buf with
-  | (Star (Compl "\n"), "\n") ->
-    let str = Sedlexing.Utf8.lexeme buf in
-    CCString.sub str 0 (CCString.length str - 1)
   | Star (Compl "\n") -> Sedlexing.Utf8.lexeme buf
   | _ -> failwith "unreachable"
 
@@ -265,7 +262,7 @@ let%expect_test _ =
            [{ Comment.type_ = Comment.Type.Short; str = "a";
               location =
               { Location.begin_ = { Position.line = 1; column = 1 };
-                end_ = { Position.line = 2; column = 1 } }
+                end_ = { Position.line = 1; column = 4 } }
               }
              ]
            },
