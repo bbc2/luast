@@ -31,12 +31,10 @@ let chunk :=
   | block = block; Eof; <>
 
 let block :=
-  | stats = list(stat); ret = option(retstat);
-    {{Luast__ast.Located.value = {Block.stats; ret}; loc = loc $sloc}}
+  | located(stats = list(stat); ret = option(retstat); {{Block.stats; ret}})
 
 let stat :=
-  | vars = varlist; Equal; exps = explist;
-  {{Luast__ast.Located.value = Stat.Assignment {vars; exps}; loc = loc $sloc}}
+  | located(vars = varlist; Equal; exps = explist; {Stat.Assignment {vars; exps}})
 
 let varlist :=
   | ~ = separated_nonempty_list(Comma, var); <>
@@ -45,8 +43,10 @@ let explist :=
   | ~ = separated_nonempty_list(Comma, exp); <>
 
 let retstat :=
-  | Return; exps = option(explist); option(Semi_colon);
-  {{Luast__ast.Located.value = exps |> CCOpt.get_or ~default:[]; loc = loc $sloc}}
+  | located(
+      Return; exps = option(explist); option(Semi_colon);
+      {exps |> CCOpt.get_or ~default:[]}
+    )
 
 let var :=
   | ~ = Id; <Var.Name>
@@ -72,4 +72,5 @@ let fieldsep :=
   | Comma
   | Semi_colon
 
-%%
+let located(value) ==
+  ~ = value; {{Luast__ast.Located.value; loc = loc $sloc }}
