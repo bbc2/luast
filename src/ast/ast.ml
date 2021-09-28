@@ -27,14 +27,14 @@ and Exp : sig
     | Nil
     | Numeral of Numeral.t
     | Str of Str.t
-    | Table of Field.t list
+    | Table of Field.t Located.t list
   [@@deriving eq, ord, show]
 end = struct
   type t =
     | Nil
     | Numeral of Numeral.t
     | Str of Str.t
-    | Table of Field.t list
+    | Table of Field.t Located.t list
   [@@deriving eq, ord, show]
 end
 

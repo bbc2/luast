@@ -39,19 +39,10 @@ let parse_chunk str =
   Sedlexing.set_position buffer
     {pos_lnum = 1; pos_cnum = 0; pos_bol = 0; pos_fname = ""};
 
-  let locations = ref [] in
-  let module Param = struct
-    let add_loc loc = locations := loc :: !locations
-  end in
-  let module Parser = Luast__parsing.Parser.Make (Param) in
-  match parse buffer Parser.chunk with
+  match parse buffer Luast__parsing.Parser.chunk with
   | (tree, comments, empty_spaces) ->
-    Ok
-      { Luast__ast.Chunk_with_comments.tree
-      ; locations = !locations
-      ; comments
-      ; empty_spaces }
-  | exception Parser.Error ->
+    Ok {Luast__ast.Chunk_with_comments.tree; comments; empty_spaces}
+  | exception Luast__parsing.Parser.Error ->
     Error
       { Parser_error.position = (Luast__parsing.Util.get_location buffer).begin_
       ; origin = Parser }
@@ -86,12 +77,6 @@ let%expect_test _ =
             { Location.begin_ = { Position.line = 1; column = 1 };
               end_ = { Position.line = 1; column = 8 } }
             };
-          locations =
-          [{ Location.begin_ = { Position.line = 1; column = 1 };
-             end_ = { Position.line = 1; column = 8 } };
-            { Location.begin_ = { Position.line = 1; column = 1 };
-              end_ = { Position.line = 1; column = 8 } }
-            ];
           comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
@@ -114,12 +99,6 @@ let%expect_test _ =
             { Location.begin_ = { Position.line = 1; column = 1 };
               end_ = { Position.line = 1; column = 6 } }
             };
-          locations =
-          [{ Location.begin_ = { Position.line = 1; column = 1 };
-             end_ = { Position.line = 1; column = 6 } };
-            { Location.begin_ = { Position.line = 1; column = 1 };
-              end_ = { Position.line = 1; column = 6 } }
-            ];
           comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
@@ -142,12 +121,6 @@ let%expect_test _ =
             { Location.begin_ = { Position.line = 1; column = 1 };
               end_ = { Position.line = 1; column = 8 } }
             };
-          locations =
-          [{ Location.begin_ = { Position.line = 1; column = 1 };
-             end_ = { Position.line = 1; column = 8 } };
-            { Location.begin_ = { Position.line = 1; column = 1 };
-              end_ = { Position.line = 1; column = 8 } }
-            ];
           comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
@@ -170,12 +143,6 @@ let%expect_test _ =
             { Location.begin_ = { Position.line = 1; column = 1 };
               end_ = { Position.line = 1; column = 7 } }
             };
-          locations =
-          [{ Location.begin_ = { Position.line = 1; column = 1 };
-             end_ = { Position.line = 1; column = 7 } };
-            { Location.begin_ = { Position.line = 1; column = 1 };
-              end_ = { Position.line = 1; column = 7 } }
-            ];
           comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
@@ -196,7 +163,13 @@ let%expect_test _ =
                  Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
                    exps =
                    [(Ast.Exp.Table
-                       [(Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)))
+                       [{ Located.value =
+                          (Ast.Field.Exp
+                             (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)));
+                          loc =
+                          { Location.begin_ = { Position.line = 1; column = 6 };
+                            end_ = { Position.line = 1; column = 7 } }
+                          }
                          ])
                      ]};
                  loc =
@@ -209,12 +182,6 @@ let%expect_test _ =
             { Location.begin_ = { Position.line = 1; column = 1 };
               end_ = { Position.line = 1; column = 8 } }
             };
-          locations =
-          [{ Location.begin_ = { Position.line = 1; column = 1 };
-             end_ = { Position.line = 1; column = 8 } };
-            { Location.begin_ = { Position.line = 1; column = 1 };
-              end_ = { Position.line = 1; column = 8 } }
-            ];
           comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
@@ -228,7 +195,13 @@ let%expect_test _ =
                  Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
                    exps =
                    [(Ast.Exp.Table
-                       [(Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)))
+                       [{ Located.value =
+                          (Ast.Field.Exp
+                             (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)));
+                          loc =
+                          { Location.begin_ = { Position.line = 1; column = 6 };
+                            end_ = { Position.line = 1; column = 7 } }
+                          }
                          ])
                      ]};
                  loc =
@@ -241,12 +214,6 @@ let%expect_test _ =
             { Location.begin_ = { Position.line = 1; column = 1 };
               end_ = { Position.line = 1; column = 9 } }
             };
-          locations =
-          [{ Location.begin_ = { Position.line = 1; column = 1 };
-             end_ = { Position.line = 1; column = 9 } };
-            { Location.begin_ = { Position.line = 1; column = 1 };
-              end_ = { Position.line = 1; column = 9 } }
-            ];
           comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
@@ -260,9 +227,20 @@ let%expect_test _ =
                  Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
                    exps =
                    [(Ast.Exp.Table
-                       [(Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)));
-                         (Ast.Field.Exp
-                            (Ast.Exp.Numeral (Ast.Numeral.Integer 1L)))
+                       [{ Located.value =
+                          (Ast.Field.Exp
+                             (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)));
+                          loc =
+                          { Location.begin_ = { Position.line = 1; column = 6 };
+                            end_ = { Position.line = 1; column = 7 } }
+                          };
+                         { Located.value =
+                           (Ast.Field.Exp
+                              (Ast.Exp.Numeral (Ast.Numeral.Integer 1L)));
+                           loc =
+                           { Location.begin_ = { Position.line = 1; column = 9 };
+                             end_ = { Position.line = 1; column = 10 } }
+                           }
                          ])
                      ]};
                  loc =
@@ -275,12 +253,6 @@ let%expect_test _ =
             { Location.begin_ = { Position.line = 1; column = 1 };
               end_ = { Position.line = 1; column = 11 } }
             };
-          locations =
-          [{ Location.begin_ = { Position.line = 1; column = 1 };
-             end_ = { Position.line = 1; column = 11 } };
-            { Location.begin_ = { Position.line = 1; column = 1 };
-              end_ = { Position.line = 1; column = 11 } }
-            ];
           comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
@@ -294,9 +266,20 @@ let%expect_test _ =
                  Ast.Stat.Assignment {vars = [(Ast.Var.Name "a")];
                    exps =
                    [(Ast.Exp.Table
-                       [(Ast.Field.Exp (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)));
-                         (Ast.Field.Exp
-                            (Ast.Exp.Numeral (Ast.Numeral.Integer 1L)))
+                       [{ Located.value =
+                          (Ast.Field.Exp
+                             (Ast.Exp.Numeral (Ast.Numeral.Integer 0L)));
+                          loc =
+                          { Location.begin_ = { Position.line = 1; column = 6 };
+                            end_ = { Position.line = 1; column = 7 } }
+                          };
+                         { Located.value =
+                           (Ast.Field.Exp
+                              (Ast.Exp.Numeral (Ast.Numeral.Integer 1L)));
+                           loc =
+                           { Location.begin_ = { Position.line = 1; column = 9 };
+                             end_ = { Position.line = 1; column = 10 } }
+                           }
                          ])
                      ]};
                  loc =
@@ -309,12 +292,6 @@ let%expect_test _ =
             { Location.begin_ = { Position.line = 1; column = 1 };
               end_ = { Position.line = 1; column = 12 } }
             };
-          locations =
-          [{ Location.begin_ = { Position.line = 1; column = 1 };
-             end_ = { Position.line = 1; column = 12 } };
-            { Location.begin_ = { Position.line = 1; column = 1 };
-              end_ = { Position.line = 1; column = 12 } }
-            ];
           comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
@@ -340,12 +317,6 @@ let%expect_test _ =
             { Location.begin_ = { Position.line = 1; column = 1 };
               end_ = { Position.line = 1; column = 12 } }
             };
-          locations =
-          [{ Location.begin_ = { Position.line = 1; column = 1 };
-             end_ = { Position.line = 1; column = 12 } };
-            { Location.begin_ = { Position.line = 1; column = 1 };
-              end_ = { Position.line = 1; column = 12 } }
-            ];
           comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
@@ -375,14 +346,6 @@ let%expect_test _ =
               { Location.begin_ = { Position.line = 1; column = 1 };
                 end_ = { Position.line = 2; column = 6 } }
               };
-            locations =
-            [{ Location.begin_ = { Position.line = 1; column = 1 };
-               end_ = { Position.line = 2; column = 6 } };
-              { Location.begin_ = { Position.line = 2; column = 1 };
-                end_ = { Position.line = 2; column = 6 } };
-              { Location.begin_ = { Position.line = 1; column = 1 };
-                end_ = { Position.line = 1; column = 6 } }
-              ];
             comments = []; empty_spaces = [] })
       |}]
 
@@ -404,12 +367,6 @@ let%expect_test _ =
             { Location.begin_ = { Position.line = 1; column = 1 };
               end_ = { Position.line = 1; column = 7 } }
             };
-          locations =
-          [{ Location.begin_ = { Position.line = 1; column = 1 };
-             end_ = { Position.line = 1; column = 7 } };
-            { Location.begin_ = { Position.line = 1; column = 1 };
-              end_ = { Position.line = 1; column = 7 } }
-            ];
           comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
@@ -430,12 +387,6 @@ let%expect_test _ =
             { Location.begin_ = { Position.line = 1; column = 1 };
               end_ = { Position.line = 1; column = 8 } }
             };
-          locations =
-          [{ Location.begin_ = { Position.line = 1; column = 1 };
-             end_ = { Position.line = 1; column = 8 } };
-            { Location.begin_ = { Position.line = 1; column = 1 };
-              end_ = { Position.line = 1; column = 8 } }
-            ];
           comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
@@ -457,12 +408,6 @@ let%expect_test _ =
             { Location.begin_ = { Position.line = 1; column = 1 };
               end_ = { Position.line = 1; column = 9 } }
             };
-          locations =
-          [{ Location.begin_ = { Position.line = 1; column = 1 };
-             end_ = { Position.line = 1; column = 9 } };
-            { Location.begin_ = { Position.line = 1; column = 1 };
-              end_ = { Position.line = 1; column = 9 } }
-            ];
           comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =
@@ -485,12 +430,6 @@ let%expect_test _ =
             { Location.begin_ = { Position.line = 1; column = 1 };
               end_ = { Position.line = 1; column = 12 } }
             };
-          locations =
-          [{ Location.begin_ = { Position.line = 1; column = 1 };
-             end_ = { Position.line = 1; column = 12 } };
-            { Location.begin_ = { Position.line = 1; column = 1 };
-              end_ = { Position.line = 1; column = 12 } }
-            ];
           comments = []; empty_spaces = [] }) |}]
 
 let%expect_test _ =

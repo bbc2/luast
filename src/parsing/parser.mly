@@ -1,17 +1,10 @@
-%parameter<Param : sig
-  val add_loc : Luast__ast.Location.t -> unit
-end>
-
 %{
   open Luast__ast.Ast
 
   let loc (begin_, end_) =
-    let loc =
-      { Luast__ast.Location.begin_ = Util.get_position begin_
+    { Luast__ast.Location.begin_ = Util.get_position begin_
       ; end_ = Util.get_position end_
-      } in
-    Param.add_loc loc;
-    loc
+    }
 %}
 
 (* %token If Then Else *)
@@ -62,8 +55,8 @@ let tableconstructor :=
 
 let fields :=
   | {[]}
-  | field = field; {[field]}
-  | field = field; fieldsep; fields = fields; {field :: fields}
+  | field = located(field); {[field]}
+  | field = located(field); fieldsep; fields = fields; {field :: fields}
 
 let field :=
   | ~ = exp; <Field.Exp>
