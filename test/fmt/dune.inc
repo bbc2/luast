@@ -13,6 +13,13 @@
  (action (diff cases/comment.exp comment.out)))
 
 (rule
+ (with-stdout-to comment_alone.out (run %{bin:luafmt} %{dep:cases/comment_alone.lua})))
+
+(rule
+ (alias runtest)
+ (action (diff cases/comment_alone.exp comment_alone.out)))
+
+(rule
  (with-stdout-to empty.out (run %{bin:luafmt} %{dep:cases/empty.lua})))
 
 (rule

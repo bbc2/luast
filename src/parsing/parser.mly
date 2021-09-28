@@ -28,10 +28,11 @@ end>
 %%
 
 let chunk :=
-  | ~ = block; Eof; <>
+  | block = block; Eof; <>
 
 let block :=
-  | stats = list(stat); ret = option(retstat); {{Block.stats; ret}}
+  | stats = list(stat); ret = option(retstat);
+    {{Luast__ast.Located.value = {Block.stats; ret}; loc = loc $sloc}}
 
 let stat :=
   | vars = varlist; Equal; exps = explist;

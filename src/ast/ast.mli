@@ -49,5 +49,5 @@ module Block : sig
 end
 
 module Chunk : sig
-  type t = Block.t [@@deriving eq, ord, show]
+  type t = Block.t Located.t [@@deriving eq, ord, show]
 end

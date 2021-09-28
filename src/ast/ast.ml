@@ -58,5 +58,5 @@ module Block = struct
 end
 
 module Chunk = struct
-  type t = Block.t [@@deriving eq, ord, show]
+  type t = Block.t Located.t [@@deriving eq, ord, show]
 end

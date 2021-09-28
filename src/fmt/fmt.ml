@@ -107,6 +107,23 @@ let format_ret fmt (ret : Luast__ast.Ast.Retstat.t Luast__ast.Located.t option)
       format_exps fmt exps
     )
 
+let format_block fmt block ~comments ~empty_spaces =
+  let {Luast__ast.Ast.Block.stats; ret} = block in
+  Format.pp_open_vbox fmt 0;
+  format_stats fmt stats ~comments ~empty_spaces;
+  if stats != [] && CCOpt.is_some ret then Format.pp_print_cut fmt ();
+  format_ret fmt ret;
+  if stats != [] || CCOpt.is_some ret then Format.pp_print_cut fmt ();
+  Format.pp_close_box fmt ()
+
+let format_located_block
+    fmt
+    (block : Luast__ast.Ast.Block.t Luast__ast.Located.t)
+    ~comments
+    ~empty_spaces =
+  format_block fmt block.value ~comments ~empty_spaces;
+  format_comments_after fmt ~comments ~empty_spaces ~position:block.loc.end_
+
 let format_chunk chunk_with_comments =
   let { Luast__ast.Chunk_with_comments.tree = chunk
       ; locations
@@ -119,12 +136,6 @@ let format_chunk chunk_with_comments =
   let buffer = Buffer.create 0 in
   let fmt = Format.formatter_of_buffer buffer in
   Format.pp_set_margin fmt 90;
-  let {Luast__ast.Ast.Block.stats; ret} = chunk in
-  Format.pp_open_vbox fmt 0;
-  format_stats fmt stats ~comments ~empty_spaces;
-  if stats != [] && CCOpt.is_some ret then Format.pp_print_cut fmt ();
-  format_ret fmt ret;
-  if stats != [] || CCOpt.is_some ret then Format.pp_print_cut fmt ();
-  Format.pp_close_box fmt ();
+  format_located_block fmt chunk ~comments ~empty_spaces;
   Format.pp_print_flush fmt ();
   Buffer.contents buffer
