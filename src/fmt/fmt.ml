@@ -1,15 +1,15 @@
-let var_to_string (var : Luast__ast.Cst.Var.t) =
+let var_to_string (var : Luast__tree.Cst.Var.t) =
   match var with
   | Name str -> str
 
-let comment_to_string (comment : Luast__ast.Comment.t) =
+let comment_to_string (comment : Luast__tree.Comment.t) =
   match comment.type_ with
   | Short -> Printf.sprintf "--%s" comment.str
   | Long {level} ->
     let equal_signs = String.init level (fun _ -> '=') in
     Printf.sprintf "--[%s[%s]%s]--" equal_signs comment.str equal_signs
 
-let format_comment fmt (comment : Luast__ast.Comment.t) =
+let format_comment fmt (comment : Luast__tree.Comment.t) =
   match comment.type_ with
   | Short -> Format.fprintf fmt "@<999>--%s" comment.str
   | Long {level} ->
@@ -20,7 +20,7 @@ let format_comment fmt (comment : Luast__ast.Comment.t) =
 let format_empty_space_after
     fmt
     ~empty_spaces
-    ~(position : Luast__ast.Position.t) =
+    ~(position : Luast__tree.Position.t) =
   let line_count =
     Empty_spaces.empty_lines ~line:(position.line + 1) empty_spaces
   in
@@ -30,12 +30,12 @@ let format_comments_before
     fmt
     ~comments
     ~empty_spaces
-    ~(position : Luast__ast.Position.t) =
+    ~(position : Luast__tree.Position.t) =
   let current_line = ref None in
   comments
   |> Comments.pop_comments_before position
   |> CCList.iter (fun comment ->
-         let {Luast__ast.Comment.location = {begin_; end_}; _} = comment in
+         let {Luast__tree.Comment.location = {begin_; end_}; _} = comment in
          (match !current_line with
          | None -> ()
          | Some line when line < begin_.line -> Format.pp_print_cut fmt ()
@@ -48,13 +48,13 @@ let format_comments_after
     fmt
     ~comments
     ~empty_spaces
-    ~(position : Luast__ast.Position.t)
+    ~(position : Luast__tree.Position.t)
     ~line =
   let last_line = ref line in
   comments
   |> Comments.pop_comments_after position
   |> CCList.iter (fun comment ->
-         let {Luast__ast.Comment.location = {begin_; end_}; _} = comment in
+         let {Luast__tree.Comment.location = {begin_; end_}; _} = comment in
          if begin_.line > line then
            Format.pp_print_break fmt 1 0
          else
@@ -64,7 +64,7 @@ let format_comments_after
          format_empty_space_after fmt ~empty_spaces ~position:end_)
 
 let rec format_located_list pp_value fmt ~comments ~empty_spaces :
-    'a Luast__ast.Located.t list -> unit = function
+    'a Luast__tree.Located.t list -> unit = function
   | [] -> ()
   | [v] ->
     format_comments_before fmt ~comments ~empty_spaces ~position:v.loc.begin_;
@@ -103,14 +103,14 @@ let rec format_field
     fmt
     ~comments
     ~empty_spaces
-    (field : Luast__ast.Cst.Field.t) =
+    (field : Luast__tree.Cst.Field.t) =
   match field with
   | Exp exp ->
     Format.pp_open_hvbox fmt 0;
     format_exp fmt ~comments ~empty_spaces exp;
     Format.pp_close_box fmt ()
 
-and format_exp ~comments ~empty_spaces fmt (exp : Luast__ast.Cst.Exp.t) =
+and format_exp ~comments ~empty_spaces fmt (exp : Luast__tree.Cst.Exp.t) =
   match exp with
   | Nil -> Format.fprintf fmt "nil"
   | Numeral (Integer n) -> Format.fprintf fmt "%Ld" n
@@ -138,7 +138,7 @@ and format_exp ~comments ~empty_spaces fmt (exp : Luast__ast.Cst.Exp.t) =
 let format_exps fmt ~comments ~empty_spaces exps =
   Format.pp_print_list (format_exp ~comments ~empty_spaces) fmt exps
 
-let format_stat fmt ~comments ~empty_spaces (stat : Luast__ast.Cst.Stat.t) =
+let format_stat fmt ~comments ~empty_spaces (stat : Luast__tree.Cst.Stat.t) =
   match stat with
   | Assignment {vars; exps} ->
     let vs = CCString.concat ", " (vars |> CCList.map var_to_string) in
@@ -149,7 +149,7 @@ let format_stat fmt ~comments ~empty_spaces (stat : Luast__ast.Cst.Stat.t) =
 
 let format_located_stat
     fmt
-    (stat : Luast__ast.Cst.Stat.t Luast__ast.Located.t)
+    (stat : Luast__tree.Cst.Stat.t Luast__tree.Located.t)
     ~comments
     ~empty_spaces =
   format_comments_before fmt ~comments ~empty_spaces ~position:stat.loc.begin_;
@@ -167,7 +167,7 @@ let format_ret
     fmt
     ~comments
     ~empty_spaces
-    (ret : Luast__ast.Cst.Retstat.t Luast__ast.Located.t option) =
+    (ret : Luast__tree.Cst.Retstat.t Luast__tree.Located.t option) =
   match ret with
   | None -> ()
   | Some {value = exps; loc = _} ->
@@ -178,7 +178,7 @@ let format_ret
     )
 
 let format_block fmt block ~comments ~empty_spaces =
-  let {Luast__ast.Cst.Block.stats; ret} = block in
+  let {Luast__tree.Cst.Block.stats; ret} = block in
   Format.pp_open_vbox fmt 0;
   format_stats fmt stats ~comments ~empty_spaces;
   if stats != [] && CCOpt.is_some ret then Format.pp_print_cut fmt ();
@@ -188,7 +188,7 @@ let format_block fmt block ~comments ~empty_spaces =
 
 let format_located_block
     fmt
-    (block : Luast__ast.Cst.Block.t Luast__ast.Located.t)
+    (block : Luast__tree.Cst.Block.t Luast__tree.Located.t)
     ~comments
     ~empty_spaces =
   format_block fmt block.value ~comments ~empty_spaces;
@@ -196,7 +196,7 @@ let format_located_block
     ~line:block.loc.end_.line
 
 let format_chunk chunk_with_comments =
-  let {Luast__ast.Chunk_with_comments.tree = chunk; comments; empty_spaces} =
+  let {Luast__tree.Chunk_with_comments.tree = chunk; comments; empty_spaces} =
     chunk_with_comments
   in
   let comments =

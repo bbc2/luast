@@ -1,8 +1,8 @@
 %{
-  open Luast__ast.Cst
+  open Luast__tree.Cst
 
   let loc (begin_, end_) =
-    { Luast__ast.Location.begin_ = Util.get_position begin_
+    { Luast__tree.Location.begin_ = Util.get_position begin_
       ; end_ = Util.get_position end_
     }
 %}
@@ -66,4 +66,4 @@ let fieldsep :=
   | Semi_colon
 
 let located(value) ==
-  ~ = value; {{Luast__ast.Located.value; loc = loc $sloc }}
+  ~ = value; {{Luast__tree.Located.value; loc = loc $sloc }}

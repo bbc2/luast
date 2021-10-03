@@ -3,8 +3,8 @@ exception Lexer_error of string
 module Step = struct
   type t =
     { token : Token.t
-    ; comments : Luast__ast.Comment.t list
-    ; empty_spaces : Luast__ast.Empty_space.t list }
+    ; comments : Luast__tree.Comment.t list
+    ; empty_spaces : Luast__tree.Empty_space.t list }
   [@@deriving eq, ord, show]
 end
 
@@ -106,8 +106,8 @@ let short_comment buf =
   | _ -> failwith "unreachable"
 
 let rec parse_token_with_comments
-    ~(comments : Luast__ast.Comment.t list ref)
-    ~(empty_spaces : Luast__ast.Empty_space.t list ref)
+    ~(comments : Luast__tree.Comment.t list ref)
+    ~(empty_spaces : Luast__tree.Empty_space.t list ref)
     buf : Token.t =
   match%sedlex buf with
   | Plus white_space ->

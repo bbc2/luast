@@ -1,9 +1,9 @@
-module Map = CCMap.Make (Luast__ast.Position)
+module Map = CCMap.Make (Luast__tree.Position)
 
 module Value = struct
   type t =
     { depth : int
-    ; comments : Luast__ast.Comment.t list ref }
+    ; comments : Luast__tree.Comment.t list ref }
 end
 
 type t =
@@ -28,8 +28,9 @@ let init ~code_locations ~comments =
   (* Thanks to the binary tree backing the map, finding the right position is logarithmic
      in complexity, which means we probably achieve O(n * log(n)) for this function. *)
   comments
-  |> CCList.sort (fun c0 c1 -> Luast__ast.Comment.compare_begin_positions c1 c0)
-  |> CCList.iter (fun (comment : Luast__ast.Comment.t) ->
+  |> CCList.sort (fun c0 c1 ->
+         Luast__tree.Comment.compare_begin_positions c1 c0)
+  |> CCList.iter (fun (comment : Luast__tree.Comment.t) ->
          let before_opt =
            Map.find_first_opt
              (fun position -> comment.location.end_ <= position)

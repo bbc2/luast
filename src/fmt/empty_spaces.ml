@@ -5,7 +5,7 @@ type t = int Map.t
 let init ~empty_spaces =
   empty_spaces
   |> CCList.to_seq
-  |> Seq.map (fun {Luast__ast.Empty_space.first_line; line_count} ->
+  |> Seq.map (fun {Luast__tree.Empty_space.first_line; line_count} ->
          (first_line, line_count))
   |> Map.of_seq
 

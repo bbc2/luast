@@ -7,7 +7,7 @@ end
 
 module Parser_error = struct
   type t =
-    { position : Luast__ast.Position.t
+    { position : Luast__tree.Position.t
     ; origin : Origin.t }
   [@@deriving eq, ord, show]
 end
@@ -41,7 +41,7 @@ let parse_chunk str =
 
   match parse buffer Luast__parsing.Parser.chunk with
   | (tree, comments, empty_spaces) ->
-    Ok {Luast__ast.Chunk_with_comments.tree; comments; empty_spaces}
+    Ok {Luast__tree.Chunk_with_comments.tree; comments; empty_spaces}
   | exception Luast__parsing.Parser.Error ->
     Error
       { Parser_error.position = (Luast__parsing.Util.get_location buffer).begin_
@@ -54,7 +54,7 @@ let parse_chunk str =
 let print str =
   str
   |> parse_chunk
-  |> [%show: (Luast__ast.Chunk_with_comments.t, Parser_error.t) result]
+  |> [%show: (Luast__tree.Chunk_with_comments.t, Parser_error.t) result]
   |> print_string
 
 let%expect_test _ =

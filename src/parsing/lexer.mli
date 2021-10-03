@@ -3,8 +3,8 @@ exception Lexer_error of string
 module Step : sig
   type t =
     { token : Token.t
-    ; comments : Luast__ast.Comment.t list
-    ; empty_spaces : Luast__ast.Empty_space.t list }
+    ; comments : Luast__tree.Comment.t list
+    ; empty_spaces : Luast__tree.Empty_space.t list }
   [@@deriving eq, ord, show]
 end
 

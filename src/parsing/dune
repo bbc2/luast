@@ -6,7 +6,7 @@
 (library
  (name luast__parsing)
  (public_name luast.parsing)
- (libraries containers sedlex luast.ast menhirLib)
+ (libraries containers sedlex luast.tree menhirLib)
  (inline_tests)
  (preprocess
   (pps sedlex.ppx ppx_deriving.std ppx_expect)))

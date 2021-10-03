@@ -1,5 +1,5 @@
 (library
- (public_name luast.ast)
- (name luast__ast)
+ (public_name luast.tree)
+ (name luast__tree)
  (preprocess
   (pps ppx_deriving.std)))
