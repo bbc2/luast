@@ -56,7 +56,7 @@ type t =
   | Triple_dot
   | Id of string
   | Integer of Int64.t
-  | Str of Luast__ast.Ast.Str.t
+  | Str of Luast__ast.Cst.Str.t
   | Eof
 [@@deriving eq, ord, show]
 

@@ -1,3 +1,8 @@
+(** Concrete syntax tree
+
+    This tree, starting at `Chunk.t`, is directly obtained from the parser.  It contains
+    details about the syntax used in the source code. *)
+
 module Var : sig
   type t = Name of string [@@deriving eq, ord, show]
 end

@@ -11,13 +11,13 @@ let next depth = depth + 1
 let rec do_field
     ~state
     ~depth
-    (field : Luast__ast.Ast.Field.t Luast__ast.Located.t) =
+    (field : Luast__ast.Cst.Field.t Luast__ast.Located.t) =
   let depth = next depth in
   State.add {value = field.loc; depth} state;
   match field.value with
   | Exp exp -> do_exp ~state ~depth exp
 
-and do_exp ~state ~depth (exp : Luast__ast.Ast.Exp.t) =
+and do_exp ~state ~depth (exp : Luast__ast.Cst.Exp.t) =
   let depth = next depth in
   match exp with
   | Nil
@@ -26,7 +26,7 @@ and do_exp ~state ~depth (exp : Luast__ast.Ast.Exp.t) =
     ()
   | Table fields -> CCList.iter (do_field ~state ~depth) fields
 
-let do_stat ~state ~depth (stat : Luast__ast.Ast.Stat.t Luast__ast.Located.t) =
+let do_stat ~state ~depth (stat : Luast__ast.Cst.Stat.t Luast__ast.Located.t) =
   let depth = next depth in
   State.add {value = stat.loc; depth} state;
   match stat.value with
@@ -45,12 +45,12 @@ let do_ret ~state ~depth ret =
   let depth = next depth in
   CCOpt.iter (do_retstat ~state ~depth) ret
 
-let do_block ~state ~depth {Luast__ast.Ast.Block.stats; ret} =
+let do_block ~state ~depth {Luast__ast.Cst.Block.stats; ret} =
   let depth = next depth in
   do_stats ~state ~depth stats;
   do_ret ~state ~depth ret
 
-let do_chunk ~state ~depth (chunk : Luast__ast.Ast.Chunk.t) =
+let do_chunk ~state ~depth (chunk : Luast__ast.Cst.Chunk.t) =
   let depth = next depth in
   State.add {value = chunk.loc; depth} state;
   do_block ~state ~depth chunk.value

@@ -1,4 +1,4 @@
-let var_to_string (var : Luast__ast.Ast.Var.t) =
+let var_to_string (var : Luast__ast.Cst.Var.t) =
   match var with
   | Name str -> str
 
@@ -103,14 +103,14 @@ let rec format_field
     fmt
     ~comments
     ~empty_spaces
-    (field : Luast__ast.Ast.Field.t) =
+    (field : Luast__ast.Cst.Field.t) =
   match field with
   | Exp exp ->
     Format.pp_open_hvbox fmt 0;
     format_exp fmt ~comments ~empty_spaces exp;
     Format.pp_close_box fmt ()
 
-and format_exp ~comments ~empty_spaces fmt (exp : Luast__ast.Ast.Exp.t) =
+and format_exp ~comments ~empty_spaces fmt (exp : Luast__ast.Cst.Exp.t) =
   match exp with
   | Nil -> Format.fprintf fmt "nil"
   | Numeral (Integer n) -> Format.fprintf fmt "%Ld" n
@@ -138,7 +138,7 @@ and format_exp ~comments ~empty_spaces fmt (exp : Luast__ast.Ast.Exp.t) =
 let format_exps fmt ~comments ~empty_spaces exps =
   Format.pp_print_list (format_exp ~comments ~empty_spaces) fmt exps
 
-let format_stat fmt ~comments ~empty_spaces (stat : Luast__ast.Ast.Stat.t) =
+let format_stat fmt ~comments ~empty_spaces (stat : Luast__ast.Cst.Stat.t) =
   match stat with
   | Assignment {vars; exps} ->
     let vs = CCString.concat ", " (vars |> CCList.map var_to_string) in
@@ -149,7 +149,7 @@ let format_stat fmt ~comments ~empty_spaces (stat : Luast__ast.Ast.Stat.t) =
 
 let format_located_stat
     fmt
-    (stat : Luast__ast.Ast.Stat.t Luast__ast.Located.t)
+    (stat : Luast__ast.Cst.Stat.t Luast__ast.Located.t)
     ~comments
     ~empty_spaces =
   format_comments_before fmt ~comments ~empty_spaces ~position:stat.loc.begin_;
@@ -167,7 +167,7 @@ let format_ret
     fmt
     ~comments
     ~empty_spaces
-    (ret : Luast__ast.Ast.Retstat.t Luast__ast.Located.t option) =
+    (ret : Luast__ast.Cst.Retstat.t Luast__ast.Located.t option) =
   match ret with
   | None -> ()
   | Some {value = exps; loc = _} ->
@@ -178,7 +178,7 @@ let format_ret
     )
 
 let format_block fmt block ~comments ~empty_spaces =
-  let {Luast__ast.Ast.Block.stats; ret} = block in
+  let {Luast__ast.Cst.Block.stats; ret} = block in
   Format.pp_open_vbox fmt 0;
   format_stats fmt stats ~comments ~empty_spaces;
   if stats != [] && CCOpt.is_some ret then Format.pp_print_cut fmt ();
@@ -188,7 +188,7 @@ let format_block fmt block ~comments ~empty_spaces =
 
 let format_located_block
     fmt
-    (block : Luast__ast.Ast.Block.t Luast__ast.Located.t)
+    (block : Luast__ast.Cst.Block.t Luast__ast.Located.t)
     ~comments
     ~empty_spaces =
   format_block fmt block.value ~comments ~empty_spaces;

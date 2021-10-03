@@ -1,5 +1,5 @@
 %{
-  open Luast__ast.Ast
+  open Luast__ast.Cst
 
   let loc (begin_, end_) =
     { Luast__ast.Location.begin_ = Util.get_position begin_
