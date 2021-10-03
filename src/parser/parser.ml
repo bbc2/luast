@@ -63,10 +63,9 @@ let%expect_test _ =
     {|
     (Ok { Chunk_with_comments.tree =
           { Located.value =
-            { Cst.Block.stats =
+            { Cst.stats =
               [{ Located.value =
-                 Cst.Stat.Assignment {vars = [(Cst.Var.Name "a")];
-                   exps = [Cst.Exp.Nil]};
+                 Cst.Assignment {vars = [(Cst.Name "a")]; exps = [Cst.Nil]};
                  loc =
                  { Location.begin_ = { Position.line = 1; column = 1 };
                    end_ = { Position.line = 1; column = 8 } }
@@ -85,10 +84,10 @@ let%expect_test _ =
     {|
     (Ok { Chunk_with_comments.tree =
           { Located.value =
-            { Cst.Block.stats =
+            { Cst.stats =
               [{ Located.value =
-                 Cst.Stat.Assignment {vars = [(Cst.Var.Name "a")];
-                   exps = [(Cst.Exp.Numeral (Cst.Numeral.Integer 0L))]};
+                 Cst.Assignment {vars = [(Cst.Name "a")];
+                   exps = [(Cst.Numeral (Cst.Integer 0L))]};
                  loc =
                  { Location.begin_ = { Position.line = 1; column = 1 };
                    end_ = { Position.line = 1; column = 6 } }
@@ -107,10 +106,10 @@ let%expect_test _ =
     {|
     (Ok { Chunk_with_comments.tree =
           { Located.value =
-            { Cst.Block.stats =
+            { Cst.stats =
               [{ Located.value =
-                 Cst.Stat.Assignment {vars = [(Cst.Var.Name "a")];
-                   exps = [(Cst.Exp.Str (Cst.Str.Short "a"))]};
+                 Cst.Assignment {vars = [(Cst.Name "a")];
+                   exps = [(Cst.Str (Cst.Short "a"))]};
                  loc =
                  { Location.begin_ = { Position.line = 1; column = 1 };
                    end_ = { Position.line = 1; column = 8 } }
@@ -129,10 +128,9 @@ let%expect_test _ =
     {|
     (Ok { Chunk_with_comments.tree =
           { Located.value =
-            { Cst.Block.stats =
+            { Cst.stats =
               [{ Located.value =
-                 Cst.Stat.Assignment {vars = [(Cst.Var.Name "a")];
-                   exps = [(Cst.Exp.Table [])]};
+                 Cst.Assignment {vars = [(Cst.Name "a")]; exps = [(Cst.Table [])]};
                  loc =
                  { Location.begin_ = { Position.line = 1; column = 1 };
                    end_ = { Position.line = 1; column = 7 } }
@@ -158,14 +156,13 @@ let%expect_test _ =
     {|
     (Ok { Chunk_with_comments.tree =
           { Located.value =
-            { Cst.Block.stats =
+            { Cst.stats =
               [{ Located.value =
-                 Cst.Stat.Assignment {vars = [(Cst.Var.Name "a")];
+                 Cst.Assignment {vars = [(Cst.Name "a")];
                    exps =
-                   [(Cst.Exp.Table
+                   [(Cst.Table
                        [{ Located.value =
-                          (Cst.Field.Exp
-                             (Cst.Exp.Numeral (Cst.Numeral.Integer 0L)));
+                          (Cst.Exp (Cst.Numeral (Cst.Integer 0L)));
                           loc =
                           { Location.begin_ = { Position.line = 1; column = 6 };
                             end_ = { Position.line = 1; column = 7 } }
@@ -190,14 +187,13 @@ let%expect_test _ =
     {|
     (Ok { Chunk_with_comments.tree =
           { Located.value =
-            { Cst.Block.stats =
+            { Cst.stats =
               [{ Located.value =
-                 Cst.Stat.Assignment {vars = [(Cst.Var.Name "a")];
+                 Cst.Assignment {vars = [(Cst.Name "a")];
                    exps =
-                   [(Cst.Exp.Table
+                   [(Cst.Table
                        [{ Located.value =
-                          (Cst.Field.Exp
-                             (Cst.Exp.Numeral (Cst.Numeral.Integer 0L)));
+                          (Cst.Exp (Cst.Numeral (Cst.Integer 0L)));
                           loc =
                           { Location.begin_ = { Position.line = 1; column = 6 };
                             end_ = { Position.line = 1; column = 7 } }
@@ -222,21 +218,19 @@ let%expect_test _ =
     {|
     (Ok { Chunk_with_comments.tree =
           { Located.value =
-            { Cst.Block.stats =
+            { Cst.stats =
               [{ Located.value =
-                 Cst.Stat.Assignment {vars = [(Cst.Var.Name "a")];
+                 Cst.Assignment {vars = [(Cst.Name "a")];
                    exps =
-                   [(Cst.Exp.Table
+                   [(Cst.Table
                        [{ Located.value =
-                          (Cst.Field.Exp
-                             (Cst.Exp.Numeral (Cst.Numeral.Integer 0L)));
+                          (Cst.Exp (Cst.Numeral (Cst.Integer 0L)));
                           loc =
                           { Location.begin_ = { Position.line = 1; column = 6 };
                             end_ = { Position.line = 1; column = 7 } }
                           };
                          { Located.value =
-                           (Cst.Field.Exp
-                              (Cst.Exp.Numeral (Cst.Numeral.Integer 1L)));
+                           (Cst.Exp (Cst.Numeral (Cst.Integer 1L)));
                            loc =
                            { Location.begin_ = { Position.line = 1; column = 9 };
                              end_ = { Position.line = 1; column = 10 } }
@@ -261,21 +255,19 @@ let%expect_test _ =
     {|
     (Ok { Chunk_with_comments.tree =
           { Located.value =
-            { Cst.Block.stats =
+            { Cst.stats =
               [{ Located.value =
-                 Cst.Stat.Assignment {vars = [(Cst.Var.Name "a")];
+                 Cst.Assignment {vars = [(Cst.Name "a")];
                    exps =
-                   [(Cst.Exp.Table
+                   [(Cst.Table
                        [{ Located.value =
-                          (Cst.Field.Exp
-                             (Cst.Exp.Numeral (Cst.Numeral.Integer 0L)));
+                          (Cst.Exp (Cst.Numeral (Cst.Integer 0L)));
                           loc =
                           { Location.begin_ = { Position.line = 1; column = 6 };
                             end_ = { Position.line = 1; column = 7 } }
                           };
                          { Located.value =
-                           (Cst.Field.Exp
-                              (Cst.Exp.Numeral (Cst.Numeral.Integer 1L)));
+                           (Cst.Exp (Cst.Numeral (Cst.Integer 1L)));
                            loc =
                            { Location.begin_ = { Position.line = 1; column = 9 };
                              end_ = { Position.line = 1; column = 10 } }
@@ -300,13 +292,12 @@ let%expect_test _ =
     {|
     (Ok { Chunk_with_comments.tree =
           { Located.value =
-            { Cst.Block.stats =
+            { Cst.stats =
               [{ Located.value =
-                 Cst.Stat.Assignment {
-                   vars = [(Cst.Var.Name "a"); (Cst.Var.Name "b")];
+                 Cst.Assignment {vars = [(Cst.Name "a"); (Cst.Name "b")];
                    exps =
-                   [(Cst.Exp.Numeral (Cst.Numeral.Integer 0L));
-                     (Cst.Exp.Numeral (Cst.Numeral.Integer 1L))]};
+                   [(Cst.Numeral (Cst.Integer 0L));
+                     (Cst.Numeral (Cst.Integer 1L))]};
                  loc =
                  { Location.begin_ = { Position.line = 1; column = 1 };
                    end_ = { Position.line = 1; column = 12 } }
@@ -325,17 +316,17 @@ let%expect_test _ =
     {|
       (Ok { Chunk_with_comments.tree =
             { Located.value =
-              { Cst.Block.stats =
+              { Cst.stats =
                 [{ Located.value =
-                   Cst.Stat.Assignment {vars = [(Cst.Var.Name "a")];
-                     exps = [(Cst.Exp.Numeral (Cst.Numeral.Integer 0L))]};
+                   Cst.Assignment {vars = [(Cst.Name "a")];
+                     exps = [(Cst.Numeral (Cst.Integer 0L))]};
                    loc =
                    { Location.begin_ = { Position.line = 1; column = 1 };
                      end_ = { Position.line = 1; column = 6 } }
                    };
                   { Located.value =
-                    Cst.Stat.Assignment {vars = [(Cst.Var.Name "b")];
-                      exps = [(Cst.Exp.Numeral (Cst.Numeral.Integer 1L))]};
+                    Cst.Assignment {vars = [(Cst.Name "b")];
+                      exps = [(Cst.Numeral (Cst.Integer 1L))]};
                     loc =
                     { Location.begin_ = { Position.line = 2; column = 1 };
                       end_ = { Position.line = 2; column = 6 } }
@@ -355,7 +346,7 @@ let%expect_test _ =
     {|
     (Ok { Chunk_with_comments.tree =
           { Located.value =
-            { Cst.Block.stats = [];
+            { Cst.stats = [];
               ret =
               (Some { Located.value = [];
                       loc =
@@ -375,7 +366,7 @@ let%expect_test _ =
     {|
     (Ok { Chunk_with_comments.tree =
           { Located.value =
-            { Cst.Block.stats = [];
+            { Cst.stats = [];
               ret =
               (Some { Located.value = [];
                       loc =
@@ -395,10 +386,9 @@ let%expect_test _ =
     {|
     (Ok { Chunk_with_comments.tree =
           { Located.value =
-            { Cst.Block.stats = [];
+            { Cst.stats = [];
               ret =
-              (Some { Located.value =
-                      [(Cst.Exp.Numeral (Cst.Numeral.Integer 0L))];
+              (Some { Located.value = [(Cst.Numeral (Cst.Integer 0L))];
                       loc =
                       { Location.begin_ = { Position.line = 1; column = 1 };
                         end_ = { Position.line = 1; column = 9 } }
@@ -416,11 +406,11 @@ let%expect_test _ =
     {|
     (Ok { Chunk_with_comments.tree =
           { Located.value =
-            { Cst.Block.stats = [];
+            { Cst.stats = [];
               ret =
               (Some { Located.value =
-                      [(Cst.Exp.Numeral (Cst.Numeral.Integer 0L));
-                        (Cst.Exp.Numeral (Cst.Numeral.Integer 1L))];
+                      [(Cst.Numeral (Cst.Integer 0L));
+                        (Cst.Numeral (Cst.Integer 1L))];
                       loc =
                       { Location.begin_ = { Position.line = 1; column = 1 };
                         end_ = { Position.line = 1; column = 12 } }

@@ -12,11 +12,11 @@
 %token Comma Semi_colon Equal
 %token <string> Id
 %token <Int64.t> Integer
-%token <Str.t> Str
+%token <str> Str
 %token Left_curly Right_curly
 %token Eof
 
-%start <Chunk.t> chunk
+%start <chunk> chunk
 
 %%
 
@@ -24,10 +24,10 @@ let chunk :=
   | block = block; Eof; <>
 
 let block :=
-  | located(stats = list(stat); ret = option(retstat); {{Block.stats; ret}})
+  | located(stats = list(stat); ret = option(retstat); {{stats; ret}})
 
 let stat :=
-  | located(vars = varlist; Equal; exps = explist; {Stat.Assignment {vars; exps}})
+  | located(vars = varlist; Equal; exps = explist; {Assignment {vars; exps}})
 
 let varlist :=
   | ~ = separated_nonempty_list(Comma, var); <>
@@ -42,16 +42,16 @@ let retstat :=
     )
 
 let var :=
-  | ~ = Id; <Var.Name>
+  | ~ = Id; <Name>
 
 let exp :=
   | Nil; {Nil}
   | integer = Integer; {Numeral (Integer integer)}
-  | ~ = Str; <Exp.Str>
+  | ~ = Str; <Str>
   | tableconstructor
 
 let tableconstructor :=
-  | Left_curly; ~ = fields; Right_curly; <Exp.Table>
+  | Left_curly; ~ = fields; Right_curly; <Table>
 
 let fields :=
   | {[]}
@@ -59,7 +59,7 @@ let fields :=
   | field = located(field); fieldsep; fields = fields; {field :: fields}
 
 let field :=
-  | ~ = exp; <Field.Exp>
+  | ~ = exp; <Exp>
 
 let fieldsep :=
   | Comma

@@ -1,58 +1,40 @@
 (** Concrete syntax tree
 
-    This tree, starting at `Chunk.t`, is directly obtained from the parser.  It contains
+    This tree, starting at `chunk`, is directly obtained from the parser.  It contains
     details about the syntax used in the source code. *)
 
-module Var : sig
-  type t = Name of string [@@deriving eq, ord, show]
-end
+type var = Name of string [@@deriving eq, ord, show]
 
-module Numeral : sig
-  type t = Integer of Int64.t [@@deriving eq, ord, show]
-end
+type numeral = Integer of Int64.t [@@deriving eq, ord, show]
 
-module Str : sig
-  type t =
-    | Short of string
-    | Long of
-        { level : int  (** Number of equal signs *)
-        ; leading_newline : bool
-        ; value : string }
-  [@@deriving eq, ord, show]
-end
+type str =
+  | Short of string
+  | Long of
+      { level : int  (** Number of equal signs *)
+      ; leading_newline : bool
+      ; value : string }
+[@@deriving eq, ord, show]
 
-module rec Field : sig
-  type t = Exp of Exp.t [@@deriving eq, ord, show]
-end
+type field = Exp of exp [@@deriving eq, ord, show]
 
-and Exp : sig
-  type t =
-    | Nil
-    | Numeral of Numeral.t
-    | Str of Str.t
-    | Table of Field.t Located.t list
-  [@@deriving eq, ord, show]
-end
+and exp =
+  | Nil
+  | Numeral of numeral
+  | Str of str
+  | Table of field Located.t list
+[@@deriving eq, ord, show]
 
-module Stat : sig
-  type t =
-    | Assignment of
-        { vars : Var.t list
-        ; exps : Exp.t list }
-  [@@deriving eq, ord, show]
-end
+type stat =
+  | Assignment of
+      { vars : var list
+      ; exps : exp list }
+[@@deriving eq, ord, show]
 
-module Retstat : sig
-  type t = Exp.t list [@@deriving eq, ord, show]
-end
+type retstat = exp list [@@deriving eq, ord, show]
 
-module Block : sig
-  type t =
-    { stats : Stat.t Located.t list
-    ; ret : Retstat.t Located.t option }
-  [@@deriving eq, ord, show]
-end
+type block =
+  { stats : stat Located.t list
+  ; ret : retstat Located.t option }
+[@@deriving eq, ord, show]
 
-module Chunk : sig
-  type t = Block.t Located.t [@@deriving eq, ord, show]
-end
+type chunk = block Located.t [@@deriving eq, ord, show]

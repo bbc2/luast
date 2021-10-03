@@ -1,62 +1,35 @@
-module Var = struct
-  type t = Name of string [@@deriving eq, ord, show]
-end
+type var = Name of string [@@deriving eq, ord, show]
 
-module Numeral = struct
-  type t = Integer of Int64.t [@@deriving eq, ord, show]
-end
+type numeral = Integer of Int64.t [@@deriving eq, ord, show]
 
-module Str = struct
-  type t =
-    | Short of string
-    | Long of
-        { level : int  (** Number of equal signs *)
-        ; leading_newline : bool
-        ; value : string }
-  [@@deriving eq, ord, show]
-end
+type str =
+  | Short of string
+  | Long of
+      { level : int
+      ; leading_newline : bool
+      ; value : string }
+[@@deriving eq, ord, show]
 
-module rec Field : sig
-  type t = Exp of Exp.t [@@deriving eq, ord, show]
-end = struct
-  type t = Exp of Exp.t [@@deriving eq, ord, show]
-end
+type field = Exp of exp [@@deriving eq, ord, show]
 
-and Exp : sig
-  type t =
-    | Nil
-    | Numeral of Numeral.t
-    | Str of Str.t
-    | Table of Field.t Located.t list
-  [@@deriving eq, ord, show]
-end = struct
-  type t =
-    | Nil
-    | Numeral of Numeral.t
-    | Str of Str.t
-    | Table of Field.t Located.t list
-  [@@deriving eq, ord, show]
-end
+and exp =
+  | Nil
+  | Numeral of numeral
+  | Str of str
+  | Table of field Located.t list
+[@@deriving eq, ord, show]
 
-module Stat = struct
-  type t =
-    | Assignment of
-        { vars : Var.t list
-        ; exps : Exp.t list }
-  [@@deriving eq, ord, show]
-end
+type stat =
+  | Assignment of
+      { vars : var list
+      ; exps : exp list }
+[@@deriving eq, ord, show]
 
-module Retstat = struct
-  type t = Exp.t list [@@deriving eq, ord, show]
-end
+type retstat = exp list [@@deriving eq, ord, show]
 
-module Block = struct
-  type t =
-    { stats : Stat.t Located.t list
-    ; ret : Retstat.t Located.t option }
-  [@@deriving eq, ord, show]
-end
+type block =
+  { stats : stat Located.t list
+  ; ret : retstat Located.t option }
+[@@deriving eq, ord, show]
 
-module Chunk = struct
-  type t = Block.t Located.t [@@deriving eq, ord, show]
-end
+type chunk = block Located.t [@@deriving eq, ord, show]
