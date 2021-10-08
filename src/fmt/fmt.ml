@@ -135,7 +135,28 @@ and format_exp ~comments ~empty_spaces fmt (exp : Luast__tree.Cst.exp) =
 let format_exps fmt ~comments ~empty_spaces exps =
   Format.pp_print_list (format_exp ~comments ~empty_spaces) fmt exps
 
-let format_stat fmt ~comments ~empty_spaces (stat : Luast__tree.Cst.stat) =
+let func_name_to_string {Luast__tree.Cst.prefix; name; method_} =
+  let final_sep =
+    if method_ then
+      ":"
+    else
+      "."
+  in
+  if prefix = [] then
+    name
+  else
+    CCString.concat "." prefix ^ final_sep ^ name
+
+let params_to_string {Luast__tree.Cst.names; ellipsis} =
+  let ellipsis_suffix =
+    if ellipsis then
+      ", ..."
+    else
+      ""
+  in
+  CCString.concat ", " names ^ ellipsis_suffix
+
+let rec format_stat fmt ~comments ~empty_spaces (stat : Luast__tree.Cst.stat) =
   match stat with
   | Assignment {vars; exps} ->
     let vs = CCString.concat ", " (vars |> CCList.map var_to_string) in
@@ -143,8 +164,13 @@ let format_stat fmt ~comments ~empty_spaces (stat : Luast__tree.Cst.stat) =
     Format.fprintf fmt "%s = " vs;
     format_exps fmt ~comments ~empty_spaces exps;
     Format.pp_close_box fmt ()
+  | Function_def {name; body = {params; block}} ->
+    Format.fprintf fmt "@[<v 0>function %s(%s)@;<0 2>@[<v 0>"
+      (func_name_to_string name) (params_to_string params);
+    format_located_block fmt ~comments ~empty_spaces block;
+    Format.fprintf fmt "@]@,end@]"
 
-let format_located_stat
+and format_located_stat
     fmt
     (stat : Luast__tree.Cst.stat Luast__tree.Located.t)
     ~comments
@@ -155,12 +181,12 @@ let format_located_stat
   format_comments_after fmt ~comments ~empty_spaces ~position:stat.loc.end_
     ~line:stat.loc.end_.line
 
-let format_stats fmt stats ~comments ~empty_spaces =
+and format_stats fmt stats ~comments ~empty_spaces =
   Format.pp_open_vbox fmt 0;
   Format.pp_print_list (format_located_stat ~comments ~empty_spaces) fmt stats;
   Format.pp_close_box fmt ()
 
-let format_ret
+and format_ret
     fmt
     ~comments
     ~empty_spaces
@@ -174,16 +200,15 @@ let format_ret
       format_exps fmt ~comments ~empty_spaces exps
     )
 
-let format_block fmt block ~comments ~empty_spaces =
+and format_block fmt block ~comments ~empty_spaces =
   let {Luast__tree.Cst.stats; ret} = block in
   Format.pp_open_vbox fmt 0;
   format_stats fmt stats ~comments ~empty_spaces;
   if stats != [] && CCOpt.is_some ret then Format.pp_print_cut fmt ();
   format_ret fmt ~comments ~empty_spaces ret;
-  if stats != [] || CCOpt.is_some ret then Format.pp_print_cut fmt ();
   Format.pp_close_box fmt ()
 
-let format_located_block
+and format_located_block
     fmt
     (block : Luast__tree.Cst.block Luast__tree.Located.t)
     ~comments
@@ -191,6 +216,12 @@ let format_located_block
   format_block fmt block.value ~comments ~empty_spaces;
   format_comments_after fmt ~comments ~empty_spaces ~position:block.loc.end_
     ~line:block.loc.end_.line
+
+let normalize_trailing_newline str =
+  if str = "" then
+    str
+  else
+    str ^ "\n"
 
 let format_chunk chunk_with_comments =
   let {Luast__tree.Chunk_with_comments.tree = chunk; comments; empty_spaces} =
@@ -205,4 +236,4 @@ let format_chunk chunk_with_comments =
   Format.pp_set_margin fmt 90;
   format_located_block fmt chunk ~comments ~empty_spaces;
   Format.pp_print_flush fmt ();
-  Buffer.contents buffer
+  Buffer.contents buffer |> normalize_trailing_newline

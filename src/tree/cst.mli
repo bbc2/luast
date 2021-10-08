@@ -24,15 +24,34 @@ and exp =
   | Table of field Located.t list
 [@@deriving eq, ord, show]
 
-type stat =
+type retstat = exp list [@@deriving eq, ord, show]
+
+type params =
+  { names : string list
+  ; ellipsis : bool }
+[@@deriving eq, ord, show]
+
+type func_name =
+  { prefix : string list
+  ; name : string
+  ; method_ : bool }
+[@@deriving eq, ord, show]
+
+type body =
+  { params : params
+  ; block : block Located.t }
+[@@deriving eq, ord, show]
+
+and stat =
   | Assignment of
       { vars : var list
       ; exps : exp list }
+  | Function_def of
+      { name : func_name
+      ; body : body }
 [@@deriving eq, ord, show]
 
-type retstat = exp list [@@deriving eq, ord, show]
-
-type block =
+and block =
   { stats : stat Located.t list
   ; ret : retstat Located.t option }
 [@@deriving eq, ord, show]

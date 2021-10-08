@@ -8,12 +8,13 @@
 %}
 
 (* %token If Then Else *)
-%token Nil Return
-%token Comma Semi_colon Equal
+%token Nil Return Function End
+%token Comma Colon Semi_colon Equal Triple_dot
 %token <string> Id
 %token <Int64.t> Integer
 %token <str> Str
 %token Left_curly Right_curly
+%token Left_paren Right_paren
 %token Eof
 
 %start <chunk> chunk
@@ -28,6 +29,7 @@ let block :=
 
 let stat :=
   | located(vars = varlist; Equal; exps = explist; {Assignment {vars; exps}})
+  | located(Function; name = funcname; body = funcbody; {Function_def {name; body}})
 
 let varlist :=
   | ~ = separated_nonempty_list(Comma, var); <>
@@ -40,6 +42,25 @@ let retstat :=
       Return; exps = option(explist); option(Semi_colon);
       {exps |> CCOpt.get_or ~default:[]}
     )
+
+let funcname :=
+  | list = separated_nonempty_list(Comma, Id); method_ = option(Colon; Id);
+    {
+      let names = CCList.append (CCOpt.to_list method_) (CCList.rev list) in
+      { prefix = CCList.rev (CCList.tl names)
+      ; name = CCList.hd names
+      ; method_ = CCOpt.is_some method_
+      }
+    }
+
+let funcbody :=
+  | Left_paren; params = option(parlist); Right_paren; block = block; End;
+    {{params = params |> CCOpt.get_or ~default:{names = []; ellipsis = false}; block}}
+
+let parlist :=
+  | Triple_dot; {{names = []; ellipsis = true}}
+  | name = Id; {{names = [name]; ellipsis = false}}
+  | name = Id; Comma; params = parlist; {{params with names = name :: params.names}}
 
 let var :=
   | ~ = Id; <Name>
