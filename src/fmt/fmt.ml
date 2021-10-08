@@ -164,8 +164,14 @@ let rec format_stat fmt ~comments ~empty_spaces (stat : Luast__tree.Cst.stat) =
     Format.fprintf fmt "%s = " vs;
     format_exps fmt ~comments ~empty_spaces exps;
     Format.pp_close_box fmt ()
-  | Function_def {name; body = {params; block}} ->
-    Format.fprintf fmt "@[<v 0>function %s(%s)@;<0 2>@[<v 0>"
+  | Function_def {local; name; body = {params; block}} ->
+    let local_prefix =
+      if local then
+        "local "
+      else
+        ""
+    in
+    Format.fprintf fmt "@[<v 0>%sfunction %s(%s)@;<0 2>@[<v 0>" local_prefix
       (func_name_to_string name) (params_to_string params);
     format_located_block fmt ~comments ~empty_spaces block;
     Format.fprintf fmt "@]@,end@]"

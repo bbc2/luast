@@ -8,7 +8,7 @@
 %}
 
 (* %token If Then Else *)
-%token Nil Return Function End
+%token Nil Return Function Local End
 %token Comma Colon Semi_colon Equal Triple_dot
 %token <string> Id
 %token <Int64.t> Integer
@@ -28,8 +28,11 @@ let block :=
   | located(stats = list(stat); ret = option(retstat); {{stats; ret}})
 
 let stat :=
-  | located(vars = varlist; Equal; exps = explist; {Assignment {vars; exps}})
-  | located(Function; name = funcname; body = funcbody; {Function_def {name; body}})
+  located(
+    | vars = varlist; Equal; exps = explist; {Assignment {vars; exps}}
+    | Function; name = funcname; body = funcbody; {Function_def {name; body; local = false}}
+    | Local; Function; name = funcname; body = funcbody; {Function_def {name; body; local = true}}
+  )
 
 let varlist :=
   | ~ = separated_nonempty_list(Comma, var); <>

@@ -42,7 +42,8 @@ and stat =
       { vars : var list
       ; exps : exp list }
   | Function_def of
-      { name : func_name
+      { local : bool
+      ; name : func_name
       ; body : body }
 [@@deriving eq, ord, show]
 
