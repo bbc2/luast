@@ -30,9 +30,18 @@ b = {
 }
 
 function f()
-    -- c0_0
+    -- f0_0
     a = 0
-    -- c0_1
+    -- f0_1
     a = 1
-    -- c0_2
+    -- f0_2
 end
+
+function f()
+    -- f1
+end
+
+function f() -- f2
+end
+
+function f() --[[ f3_0 ]]-- a = 0 --[[ f3_1 ]]-- end

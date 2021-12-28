@@ -5,6 +5,8 @@ val init :
   -> comments:Luast__tree.Comment.t list
   -> t
 
+val has_comments_around : Luast__tree.Position.t -> t -> bool
+
 val pop_comments_before :
   Luast__tree.Position.t -> t -> Luast__tree.Comment.t list
 

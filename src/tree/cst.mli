@@ -57,3 +57,5 @@ and block =
 [@@deriving eq, ord, show]
 
 type chunk = block Located.t [@@deriving eq, ord, show]
+
+val block_is_empty : block -> bool

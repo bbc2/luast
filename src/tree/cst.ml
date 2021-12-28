@@ -52,3 +52,5 @@ and block =
 [@@deriving eq, ord, show]
 
 type chunk = block Located.t [@@deriving eq, ord, show]
+
+let block_is_empty {stats; ret} = stats = [] && ret = None

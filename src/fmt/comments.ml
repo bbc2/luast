@@ -52,6 +52,11 @@ let init ~code_locations ~comments =
          | (None, None) -> failwith "Unmatched comment");
   {before_map; after_map}
 
+let has_comments_around position {before_map; after_map} =
+  let {Value.comments = before; _} = Map.find position before_map in
+  let {Value.comments = after; _} = Map.find position after_map in
+  !before <> [] || !after <> []
+
 let pop_comments_before position {before_map; _} =
   let {Value.comments; _} = Map.find position before_map in
   let list = !comments in

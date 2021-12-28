@@ -1,4 +1,7 @@
 function f(x)
+end
+
+function f(x)
     a = 0
 end
 

@@ -156,6 +156,16 @@ let params_to_string {Luast__tree.Cst.names; ellipsis} =
   in
   CCString.concat ", " names ^ ellipsis_suffix
 
+let indent_if_not_empty ~comments ~(block : _ Luast__tree.Located.t) fmt =
+  (* Using `has_comments_around` here is approximate but good enough for now. *)
+  if
+    Luast__tree.Cst.block_is_empty block.value
+    && not (Comments.has_comments_around block.loc.begin_ comments)
+  then
+    ()
+  else
+    Format.pp_print_break fmt 0 2
+
 let rec format_stat fmt ~comments ~empty_spaces (stat : Luast__tree.Cst.stat) =
   match stat with
   | Assignment {vars; exps} ->
@@ -171,10 +181,13 @@ let rec format_stat fmt ~comments ~empty_spaces (stat : Luast__tree.Cst.stat) =
       else
         ""
     in
-    Format.fprintf fmt "@[<v 0>%sfunction %s(%s)@;<0 2>@[<v 0>" local_prefix
+    Format.fprintf fmt "@[<v 0>%sfunction %s(%s)" local_prefix
       (func_name_to_string name) (params_to_string params);
+    indent_if_not_empty ~block ~comments fmt;
+    Format.pp_open_vbox fmt 0;
     format_located_block fmt ~comments ~empty_spaces block;
-    Format.fprintf fmt "@]@,end@]"
+    Format.pp_close_box fmt ();
+    Format.fprintf fmt "@,end@]"
 
 and format_located_stat
     fmt
@@ -208,11 +221,9 @@ and format_ret
 
 and format_block fmt block ~comments ~empty_spaces =
   let {Luast__tree.Cst.stats; ret} = block in
-  Format.pp_open_vbox fmt 0;
   format_stats fmt stats ~comments ~empty_spaces;
   if stats != [] && CCOption.is_some ret then Format.pp_print_cut fmt ();
-  format_ret fmt ~comments ~empty_spaces ret;
-  Format.pp_close_box fmt ()
+  format_ret fmt ~comments ~empty_spaces ret
 
 and format_located_block
     fmt
@@ -220,8 +231,15 @@ and format_located_block
     ~comments
     ~empty_spaces =
   format_block fmt block.value ~comments ~empty_spaces;
+  let line =
+    if Luast__tree.Cst.block_is_empty block.value then
+      (* If the block is empty, its position as determined by Merlin is one line higher. *)
+      block.loc.end_.line + 1
+    else
+      block.loc.end_.line
+  in
   format_comments_after fmt ~comments ~empty_spaces ~position:block.loc.end_
-    ~line:block.loc.end_.line
+    ~line
 
 let normalize_trailing_newline str =
   if str = "" then
