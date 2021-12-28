@@ -19,10 +19,7 @@ let rec do_field
 and do_exp ~state ~depth (exp : Luast__tree.Cst.exp) =
   let depth = next depth in
   match exp with
-  | Nil
-  | Numeral _
-  | Str _ ->
-    ()
+  | Nil | Numeral _ | Str _ -> ()
   | Table fields -> CCList.iter (do_field ~state ~depth) fields
 
 let do_retstat ~state ~depth (retstat : 'a Luast__tree.Located.t) =

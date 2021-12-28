@@ -18,7 +18,7 @@ let next_token ~comments ~empty_spaces buffer () =
       ; empty_spaces = new_empty_spaces } =
     Luast__parsing.Lexer.parse_token buffer
   in
-  let (begin_, end_) = Sedlexing.lexing_positions buffer in
+  let begin_, end_ = Sedlexing.lexing_positions buffer in
   comments := CCList.append !comments new_comments;
   empty_spaces := CCList.append !empty_spaces new_empty_spaces;
   (token, begin_, end_)
@@ -40,7 +40,7 @@ let parse_chunk str =
     {pos_lnum = 1; pos_cnum = 0; pos_bol = 0; pos_fname = ""};
 
   match parse buffer Luast__parsing.Parser.chunk with
-  | (tree, comments, empty_spaces) ->
+  | tree, comments, empty_spaces ->
     Ok {Luast__tree.Chunk_with_comments.tree; comments; empty_spaces}
   | exception Luast__parsing.Parser.Error ->
     Error

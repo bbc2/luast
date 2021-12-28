@@ -54,10 +54,8 @@ let format_comments_after
   |> Comments.pop_comments_after position
   |> CCList.iter (fun comment ->
          let {Luast__tree.Comment.location = {begin_; end_}; _} = comment in
-         if begin_.line > line then
-           Format.pp_print_break fmt 1 0
-         else
-           Format.fprintf fmt " ";
+         if begin_.line > line then Format.pp_print_break fmt 1 0
+         else Format.fprintf fmt " ";
          last_line := end_.line;
          format_comment fmt comment;
          format_empty_space_after fmt ~empty_spaces ~position:end_)
@@ -113,46 +111,26 @@ and format_exp ~comments ~empty_spaces fmt (exp : Luast__tree.Cst.exp) =
   | Str (Short str) -> Format.fprintf fmt "%S" str
   | Str (Long {level; leading_newline; value}) ->
     let equal_signs = String.init level (fun _ -> '=') in
-    let newline =
-      if leading_newline then
-        "\n"
-      else
-        ""
-    in
+    let newline = if leading_newline then "\n" else "" in
     Format.fprintf fmt "[%s[%s%s]%s]" equal_signs newline value equal_signs
   | Table fields ->
-    if fields = [] then
-      Format.fprintf fmt "{}"
+    if fields = [] then Format.fprintf fmt "{}"
     else (
       Format.fprintf fmt "{@;<0 2>@[<hv 0>";
       format_located_list
         (format_field ~comments ~empty_spaces)
         fmt ~comments ~empty_spaces fields;
-      Format.fprintf fmt "@]}"
-    )
+      Format.fprintf fmt "@]}")
 
 let format_exps fmt ~comments ~empty_spaces exps =
   Format.pp_print_list (format_exp ~comments ~empty_spaces) fmt exps
 
 let func_name_to_string {Luast__tree.Cst.prefix; name; method_} =
-  let final_sep =
-    if method_ then
-      ":"
-    else
-      "."
-  in
-  if prefix = [] then
-    name
-  else
-    CCString.concat "." prefix ^ final_sep ^ name
+  let final_sep = if method_ then ":" else "." in
+  if prefix = [] then name else CCString.concat "." prefix ^ final_sep ^ name
 
 let params_to_string {Luast__tree.Cst.names; ellipsis} =
-  let ellipsis_suffix =
-    if ellipsis then
-      ", ..."
-    else
-      ""
-  in
+  let ellipsis_suffix = if ellipsis then ", ..." else "" in
   CCString.concat ", " names ^ ellipsis_suffix
 
 let indent_if_not_empty ~comments ~(block : _ Luast__tree.Located.t) fmt =
@@ -160,10 +138,8 @@ let indent_if_not_empty ~comments ~(block : _ Luast__tree.Located.t) fmt =
   if
     Luast__tree.Cst.block_is_empty block.value
     && not (Comments.has_comments_around block.loc.begin_ comments)
-  then
-    ()
-  else
-    Format.pp_print_break fmt 0 2
+  then ()
+  else Format.pp_print_break fmt 0 2
 
 let rec format_stat fmt ~comments ~empty_spaces (stat : Luast__tree.Cst.stat) =
   match stat with
@@ -174,12 +150,7 @@ let rec format_stat fmt ~comments ~empty_spaces (stat : Luast__tree.Cst.stat) =
     format_exps fmt ~comments ~empty_spaces exps;
     Format.pp_close_box fmt ()
   | Function_def {local; name; body = {params; block}} ->
-    let local_prefix =
-      if local then
-        "local "
-      else
-        ""
-    in
+    let local_prefix = if local then "local " else "" in
     Format.fprintf fmt "@[<v 0>%sfunction %s(%s)" local_prefix
       (func_name_to_string name) (params_to_string params);
     indent_if_not_empty ~block ~comments fmt;
@@ -215,8 +186,7 @@ and format_ret
     Format.fprintf fmt "return";
     if exps != [] then (
       Format.pp_print_space fmt ();
-      format_exps fmt ~comments ~empty_spaces exps
-    )
+      format_exps fmt ~comments ~empty_spaces exps)
 
 and format_block fmt block ~comments ~empty_spaces =
   let {Luast__tree.Cst.stats; ret} = block in
@@ -234,17 +204,12 @@ and format_located_block
     if Luast__tree.Cst.block_is_empty block.value then
       (* If the block is empty, its position as determined by Merlin is one line higher. *)
       block.loc.end_.line + 1
-    else
-      block.loc.end_.line
+    else block.loc.end_.line
   in
   format_comments_after fmt ~comments ~empty_spaces ~position:block.loc.end_
     ~line
 
-let normalize_trailing_newline str =
-  if str = "" then
-    str
-  else
-    str ^ "\n"
+let normalize_trailing_newline str = if str = "" then str else str ^ "\n"
 
 let format_chunk chunk_with_comments =
   let {Luast__tree.Chunk_with_comments.tree = chunk; comments; empty_spaces} =

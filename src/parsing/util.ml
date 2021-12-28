@@ -4,5 +4,5 @@ let get_position lexing_position =
   {Luast__tree.Position.line = pos_lnum; column}
 
 let get_location buffer =
-  let (begin_, end_) = Sedlexing.lexing_positions buffer in
+  let begin_, end_ = Sedlexing.lexing_positions buffer in
   {Luast__tree.Location.begin_ = get_position begin_; end_ = get_position end_}

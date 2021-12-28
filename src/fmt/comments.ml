@@ -42,14 +42,12 @@ let init ~code_locations ~comments =
              after_map
          in
          match (before_opt, after_opt) with
-         | (Some (_, before), Some (_, after)) when before.depth <= after.depth
-           ->
+         | Some (_, before), Some (_, after) when before.depth <= after.depth ->
            after.comments := comment :: !(after.comments)
-         | (Some (_, before), _) ->
+         | Some (_, before), _ ->
            before.comments := comment :: !(before.comments)
-         | (_, Some (_, after)) ->
-           after.comments := comment :: !(after.comments)
-         | (None, None) -> failwith "Unmatched comment");
+         | _, Some (_, after) -> after.comments := comment :: !(after.comments)
+         | None, None -> failwith "Unmatched comment");
   {before_map; after_map}
 
 let has_comments_around position {before_map; after_map} =

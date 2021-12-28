@@ -11,7 +11,7 @@ end
 let digit = [%sedlex.regexp? '0' .. '9']
 let letter = [%sedlex.regexp? 'a' .. 'z' | 'A' .. 'Z']
 let integer = [%sedlex.regexp? Plus digit]
-let identifier = [%sedlex.regexp? (letter, Star (letter | digit))]
+let identifier = [%sedlex.regexp? letter, Star (letter | digit)]
 
 let control_char = function
   | 'a' -> "\007"
@@ -37,17 +37,15 @@ let rec quoted_string ~quote buf acc =
   match%sedlex buf with
   | Chars {|'"|} ->
     let chr = (Sedlexing.Utf8.lexeme buf).[0] in
-    if Quoting.delimiter quote = chr then
-      acc
-    else
-      quoted_string ~quote buf (acc ^ CCString.of_char chr)
-  | ("\\", Chars "\\\"'\n") ->
+    if Quoting.delimiter quote = chr then acc
+    else quoted_string ~quote buf (acc ^ CCString.of_char chr)
+  | "\\", Chars "\\\"'\n" ->
     let escaped = CCString.of_char (Sedlexing.Utf8.lexeme buf).[1] in
     quoted_string ~quote buf (acc ^ escaped)
-  | ("\\", Chars "abfnrtv") ->
+  | "\\", Chars "abfnrtv" ->
     let escaped = (Sedlexing.Utf8.lexeme buf).[1] in
     quoted_string ~quote buf (acc ^ control_char escaped)
-  | ("\\z", Opt white_space) -> quoted_string ~quote buf acc
+  | "\\z", Opt white_space -> quoted_string ~quote buf acc
   | "\n" -> raise (Lexer_error "Unescaped newline in quoted string")
   | Compl (Chars "\\") ->
     quoted_string ~quote buf (acc ^ Sedlexing.Utf8.lexeme buf)
@@ -152,20 +150,20 @@ let rec parse_token_with_comments
   | identifier -> Id (Sedlexing.Utf8.lexeme buf)
   | integer -> (
     let str = Sedlexing.Utf8.lexeme buf in
-    try Integer (Int64.of_string str) with
-    | Failure _ -> raise (Lexer_error (Printf.sprintf "Not an integer: %s" str))
-    )
+    try Integer (Int64.of_string str)
+    with Failure _ ->
+      raise (Lexer_error (Printf.sprintf "Not an integer: %s" str)))
   | Plus (Chars "'") -> Str (Short (quoted_string ~quote:Single buf ""))
   | Plus (Chars "\"") -> Str (Short (quoted_string ~quote:Double buf ""))
-  | ("[", Star "=", "[", "\n") ->
+  | "[", Star "=", "[", "\n" ->
     let level = CCString.length (Sedlexing.Utf8.lexeme buf) - 3 in
     Str
       (Long {level; leading_newline = true; value = long_string ~level buf ""})
-  | ("[", Star "=", "[") ->
+  | "[", Star "=", "[" ->
     let level = CCString.length (Sedlexing.Utf8.lexeme buf) - 2 in
     Str
       (Long {level; leading_newline = false; value = long_string ~level buf ""})
-  | ("--[", Star "=", "[") ->
+  | "--[", Star "=", "[" ->
     let level = CCString.length (Sedlexing.Utf8.lexeme buf) - 4 in
     let begin_ = (Util.get_location buf).begin_ in
     let str = long_string ~level buf "" in
@@ -197,10 +195,9 @@ let lex str =
 
   try
     let token = parse_token buf in
-    let (_, {Lexing.pos_cnum; _}) = Sedlexing.lexing_positions buf in
+    let _, {Lexing.pos_cnum; _} = Sedlexing.lexing_positions buf in
     Ok (token, pos_cnum)
-  with
-  | Lexer_error str -> Error str
+  with Lexer_error str -> Error str
 
 let print str =
   lex str |> [%show: (Step.t * int, string) result] |> print_endline

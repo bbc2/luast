@@ -1,4 +1,5 @@
-break-cases=all
+version=0.20.1
+break-cases=fit-or-vertical
 break-fun-decl=fit-or-vertical
 break-fun-sig=fit-or-vertical
 break-infix-before-func=false
@@ -7,8 +8,6 @@ break-separators=before
 break-sequences=true
 cases-exp-indent=2
 dock-collection-brackets=false
-if-then-else=k-r
-parens-tuple-patterns=always
 parens-tuple=always
 space-around-arrays=false
 space-around-lists=false
