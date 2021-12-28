@@ -2,7 +2,6 @@ module State = struct
   type t = {mutable locs : Location_with_depth.t list}
 
   let init () = {locs = []}
-
   let add loc state = state.locs <- loc :: state.locs
 end
 
@@ -47,7 +46,7 @@ and do_stats ~state ~depth stats =
 
 and do_ret ~state ~depth ret =
   let depth = next depth in
-  CCOpt.iter (do_retstat ~state ~depth) ret
+  CCOption.iter (do_retstat ~state ~depth) ret
 
 and do_block ~state ~depth {Luast__tree.Cst.stats; ret} =
   let depth = next depth in

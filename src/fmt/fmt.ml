@@ -210,7 +210,7 @@ and format_block fmt block ~comments ~empty_spaces =
   let {Luast__tree.Cst.stats; ret} = block in
   Format.pp_open_vbox fmt 0;
   format_stats fmt stats ~comments ~empty_spaces;
-  if stats != [] && CCOpt.is_some ret then Format.pp_print_cut fmt ();
+  if stats != [] && CCOption.is_some ret then Format.pp_print_cut fmt ();
   format_ret fmt ~comments ~empty_spaces ret;
   Format.pp_close_box fmt ()
 

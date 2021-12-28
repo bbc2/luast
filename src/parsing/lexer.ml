@@ -9,11 +9,8 @@ module Step = struct
 end
 
 let digit = [%sedlex.regexp? '0' .. '9']
-
 let letter = [%sedlex.regexp? 'a' .. 'z' | 'A' .. 'Z']
-
 let integer = [%sedlex.regexp? Plus digit]
-
 let identifier = [%sedlex.regexp? (letter, Star (letter | digit))]
 
 let control_char = function

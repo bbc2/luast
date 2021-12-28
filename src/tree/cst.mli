@@ -4,7 +4,6 @@
     details about the syntax used in the source code. *)
 
 type var = Name of string [@@deriving eq, ord, show]
-
 type numeral = Integer of Int64.t [@@deriving eq, ord, show]
 
 type str =

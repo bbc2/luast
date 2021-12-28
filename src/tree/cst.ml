@@ -1,5 +1,4 @@
 type var = Name of string [@@deriving eq, ord, show]
-
 type numeral = Integer of Int64.t [@@deriving eq, ord, show]
 
 type str =

@@ -43,22 +43,22 @@ let explist :=
 let retstat :=
   | located(
       Return; exps = option(explist); option(Semi_colon);
-      {exps |> CCOpt.get_or ~default:[]}
+      {exps |> CCOption.get_or ~default:[]}
     )
 
 let funcname :=
   | list = separated_nonempty_list(Comma, Id); method_ = option(Colon; Id);
     {
-      let names = CCList.append (CCOpt.to_list method_) (CCList.rev list) in
+      let names = CCList.append (CCOption.to_list method_) (CCList.rev list) in
       { prefix = CCList.rev (CCList.tl names)
       ; name = CCList.hd names
-      ; method_ = CCOpt.is_some method_
+      ; method_ = CCOption.is_some method_
       }
     }
 
 let funcbody :=
   | Left_paren; params = option(parlist); Right_paren; block = block; End;
-    {{params = params |> CCOpt.get_or ~default:{names = []; ellipsis = false}; block}}
+    {{params = params |> CCOption.get_or ~default:{names = []; ellipsis = false}; block}}
 
 let parlist :=
   | Triple_dot; {{names = []; ellipsis = true}}

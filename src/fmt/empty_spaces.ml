@@ -9,4 +9,5 @@ let init ~empty_spaces =
          (first_line, line_count))
   |> Map.of_seq
 
-let empty_lines ~line map = map |> Map.find_opt line |> CCOpt.get_or ~default:0
+let empty_lines ~line map =
+  map |> Map.find_opt line |> CCOption.get_or ~default:0
