@@ -66,19 +66,6 @@ let potentially_closing_long_string_bracket ~level buf =
   in
   aux ~remaining:level ~acc:""
 
-let potentially_closing_long_comment_bracket ~level buf =
-  let rec aux ~remaining ~acc =
-    if remaining = 0 then
-      match%sedlex buf with
-      | "]--" -> `Matched
-      | _ -> `Not_matched acc
-    else
-      match%sedlex buf with
-      | "=" -> aux ~remaining:(remaining - 1) ~acc:(acc ^ "=")
-      | _ -> `Not_matched acc
-  in
-  aux ~remaining:level ~acc:""
-
 let rec long_string ~level buf acc =
   match%sedlex buf with
   | "]" -> (
@@ -86,16 +73,9 @@ let rec long_string ~level buf acc =
     | `Matched -> acc
     | `Not_matched lexeme -> long_string ~level buf (acc ^ "]" ^ lexeme))
   | any -> long_string ~level buf (acc ^ Sedlexing.Utf8.lexeme buf)
-  | _ -> raise (Lexer_error "Unexpected long string character")
-
-let rec long_comment ~level buf acc =
-  match%sedlex buf with
-  | "]" -> (
-    match potentially_closing_long_comment_bracket ~level buf with
-    | `Matched -> acc
-    | `Not_matched lexeme -> long_comment ~level buf (acc ^ "]" ^ lexeme))
-  | any -> long_comment ~level buf (acc ^ Sedlexing.Utf8.lexeme buf)
-  | _ -> raise (Lexer_error "Unexpected long comment character")
+  | _ ->
+    raise
+      (Lexer_error (Printf.sprintf "Unexpected long string/comment character"))
 
 let short_comment buf =
   match%sedlex buf with
@@ -188,7 +168,7 @@ let rec parse_token_with_comments
   | ("--[", Star "=", "[") ->
     let level = CCString.length (Sedlexing.Utf8.lexeme buf) - 4 in
     let begin_ = (Util.get_location buf).begin_ in
-    let str = long_comment ~level buf "" in
+    let str = long_string ~level buf "" in
     let end_ = (Util.get_location buf).end_ in
     comments :=
       {type_ = Long {level}; str; location = {begin_; end_}} :: !comments;
@@ -276,7 +256,7 @@ let%expect_test _ =
          5)) |}]
 
 let%expect_test _ =
-  print "--[[a]]--";
+  print "--[[a]]";
   [%expect
     {|
       (Ok ({ Lexer.Step.token = Token.Eof;
@@ -284,14 +264,14 @@ let%expect_test _ =
              [{ Comment.type_ = Comment.Type.Long {level = 0}; str = "a";
                 location =
                 { Location.begin_ = { Position.line = 1; column = 1 };
-                  end_ = { Position.line = 1; column = 10 } }
+                  end_ = { Position.line = 1; column = 8 } }
                 }
                ];
              empty_spaces = [] },
-           9)) |}]
+           7)) |}]
 
 let%expect_test _ =
-  print "--[==[a]==]--";
+  print "--[==[a]==]";
   [%expect
     {|
       (Ok ({ Lexer.Step.token = Token.Eof;
@@ -299,26 +279,26 @@ let%expect_test _ =
              [{ Comment.type_ = Comment.Type.Long {level = 2}; str = "a";
                 location =
                 { Location.begin_ = { Position.line = 1; column = 1 };
-                  end_ = { Position.line = 1; column = 14 } }
+                  end_ = { Position.line = 1; column = 12 } }
                 }
                ];
              empty_spaces = [] },
-           13)) |}]
+           11)) |}]
 
 let%expect_test _ =
-  print "--[==[a]]--\n]==]--";
+  print "--[==[a]]\n]==]";
   [%expect
     {|
     (Ok ({ Lexer.Step.token = Token.Eof;
            comments =
-           [{ Comment.type_ = Comment.Type.Long {level = 2}; str = "a]]--\n";
+           [{ Comment.type_ = Comment.Type.Long {level = 2}; str = "a]]\n";
               location =
               { Location.begin_ = { Position.line = 1; column = 1 };
-                end_ = { Position.line = 2; column = 7 } }
+                end_ = { Position.line = 2; column = 5 } }
               }
              ];
            empty_spaces = [] },
-         18)) |}]
+         14)) |}]
 
 let%expect_test _ =
   print "\n";

@@ -7,15 +7,14 @@ let comment_to_string (comment : Luast__tree.Comment.t) =
   | Short -> Printf.sprintf "--%s" comment.str
   | Long {level} ->
     let equal_signs = String.init level (fun _ -> '=') in
-    Printf.sprintf "--[%s[%s]%s]--" equal_signs comment.str equal_signs
+    Printf.sprintf "--[%s[%s]%s]" equal_signs comment.str equal_signs
 
 let format_comment fmt (comment : Luast__tree.Comment.t) =
   match comment.type_ with
   | Short -> Format.fprintf fmt "@<999>--%s" comment.str
   | Long {level} ->
     let equal_signs = String.init level (fun _ -> '=') in
-    Format.fprintf fmt "@<999>--[%s[%s]%s]--" equal_signs comment.str
-      equal_signs
+    Format.fprintf fmt "@<999>--[%s[%s]%s]" equal_signs comment.str equal_signs
 
 let format_empty_space_after
     fmt
